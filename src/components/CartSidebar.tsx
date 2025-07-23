@@ -28,11 +28,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
-        <Button className="fixed top-6 right-6 z-50 bg-gray-900 hover:bg-gray-800 text-white shadow-2xl rounded-2xl h-14 px-6 backdrop-blur-md border-0 font-light">
-          <ShoppingCart className="w-5 h-5 mr-2" />
-          Carrinho
+        <Button 
+          className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg border-0 p-0 transition-all duration-300"
+          size="icon"
+        >
+          <ShoppingCart className="w-6 h-6" />
           {totalItems > 0 && (
-            <Badge className="ml-2 bg-white text-gray-900 rounded-full h-6 w-6 flex items-center justify-center text-xs font-medium">
+            <Badge className="absolute -top-2 -right-2 bg-white text-gray-900 rounded-full h-6 w-6 flex items-center justify-center text-xs font-medium border-2 border-gray-900">
               {totalItems}
             </Badge>
           )}
