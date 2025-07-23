@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
 import CartSidebar from './CartSidebar';
@@ -17,8 +16,6 @@ const SalesForm: React.FC = () => {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
-
-  const categories = [...new Set(menuItems.map(item => item.category))];
 
   const addToCart = (item: MenuItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
@@ -35,7 +32,7 @@ const SalesForm: React.FC = () => {
     }
     
     toast({
-      title: "Item adicionado!",
+      title: "Item adicionado",
       description: `${item.name} foi adicionado ao carrinho.`,
     });
   };
@@ -122,7 +119,7 @@ const SalesForm: React.FC = () => {
     setIsCartOpen(false);
 
     toast({
-      title: "Venda processada!",
+      title: "Venda processada",
       description: `Venda de R$ ${saleRecord.total.toFixed(2)} foi registrada com sucesso.`,
     });
   };
@@ -132,44 +129,28 @@ const SalesForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-light text-gray-900 mb-3">
             Sistema de Vendas
           </h1>
-          <p className="text-gray-600 text-lg">
-            Selecione os itens do cardápio para registrar uma venda
+          <p className="text-gray-600 text-lg font-light">
+            Selecione os itens do cardápio
           </p>
         </div>
 
-        <Tabs defaultValue={categories[0]} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-8">
-            {categories.map(category => (
-              <TabsTrigger key={category} value={category} className="font-medium">
-                {category}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {categories.map(category => (
-            <TabsContent key={category} value={category}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {menuItems
-                  .filter(item => item.category === category)
-                  .map(item => (
-                    <MenuCard
-                      key={item.id}
-                      item={item}
-                      cartItem={getCartItem(item.id)}
-                      onAddToCart={addToCart}
-                      onUpdateQuantity={updateQuantity}
-                    />
-                  ))}
-              </div>
-            </TabsContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          {menuItems.map(item => (
+            <MenuCard
+              key={item.id}
+              item={item}
+              cartItem={getCartItem(item.id)}
+              onAddToCart={addToCart}
+              onUpdateQuantity={updateQuantity}
+            />
           ))}
-        </Tabs>
+        </div>
 
         <CartSidebar
           cartItems={cartItems}
@@ -181,28 +162,30 @@ const SalesForm: React.FC = () => {
 
         {/* Histórico de Vendas */}
         {salesHistory.length > 0 && (
-          <div className="mt-12 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">
-              Histórico de Vendas
-            </h2>
-            <div className="space-y-4">
-              {salesHistory.slice(0, 5).map(sale => (
-                <div key={sale.id} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-gray-800">
-                      Venda #{sale.id}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {sale.timestamp.toLocaleString('pt-BR')}
-                    </span>
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="bg-white/60 backdrop-blur-md rounded-2xl border border-gray-200/50 p-8 shadow-xl">
+              <h2 className="text-2xl font-light text-gray-900 mb-8">
+                Histórico de Vendas
+              </h2>
+              <div className="space-y-4">
+                {salesHistory.slice(0, 5).map(sale => (
+                  <div key={sale.id} className="bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-gray-200/30">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-900">
+                        Venda #{sale.id}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {sale.timestamp.toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-light text-gray-900">
+                        R$ {sale.total.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xl font-bold text-green-600">
-                      R$ {sale.total.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}

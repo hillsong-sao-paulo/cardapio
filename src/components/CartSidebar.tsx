@@ -28,46 +28,46 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
-        <Button className="fixed top-4 right-4 z-50 bg-orange-600 hover:bg-orange-700 text-white shadow-lg">
+        <Button className="fixed top-6 right-6 z-50 bg-gray-900 hover:bg-gray-800 text-white shadow-2xl rounded-2xl h-14 px-6 backdrop-blur-md border-0 font-light">
           <ShoppingCart className="w-5 h-5 mr-2" />
           Carrinho
           {totalItems > 0 && (
-            <Badge className="ml-2 bg-white text-orange-600">
+            <Badge className="ml-2 bg-white text-gray-900 rounded-full h-6 w-6 flex items-center justify-center text-xs font-medium">
               {totalItems}
             </Badge>
           )}
         </Button>
       </SheetTrigger>
       
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg bg-white/95 backdrop-blur-md border-0">
         <SheetHeader>
-          <SheetTitle className="flex items-center text-xl">
-            <ShoppingCart className="w-5 h-5 mr-2 text-orange-600" />
+          <SheetTitle className="flex items-center text-xl font-light text-gray-900">
+            <ShoppingCart className="w-5 h-5 mr-2 text-gray-700" />
             Carrinho de Vendas
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-8 space-y-6">
           {cartItems.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>Carrinho vazio</p>
-              <p className="text-sm">Adicione itens para iniciar uma venda</p>
+            <div className="text-center py-12 text-gray-500">
+              <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p className="font-light text-lg">Carrinho vazio</p>
+              <p className="text-sm font-light">Adicione itens para iniciar uma venda</p>
             </div>
           ) : (
             <>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {cartItems.map((cartItem) => (
-                  <div key={cartItem.menuItem.id} className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium text-sm text-gray-800">
+                  <div key={cartItem.menuItem.id} className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/30">
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-medium text-sm text-gray-900">
                         {cartItem.menuItem.name}
                       </h4>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onUpdateQuantity(cartItem.menuItem.id, 0)}
-                        className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                        className="text-gray-400 hover:text-gray-600 h-6 w-6 p-0 rounded-lg"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -75,14 +75,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                     
                     <div className="flex justify-between items-center">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">
-                          Qtd: {cartItem.quantity}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          × R$ {cartItem.menuItem.price.toFixed(2)}
+                        <span className="text-sm text-gray-600 font-light">
+                          {cartItem.quantity} × R$ {cartItem.menuItem.price.toFixed(2)}
                         </span>
                       </div>
-                      <span className="font-semibold text-green-600">
+                      <span className="font-medium text-gray-900">
                         R$ {cartItem.subtotal.toFixed(2)}
                       </span>
                     </div>
@@ -90,16 +87,16 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 ))}
               </div>
 
-              <Separator />
+              <Separator className="bg-gray-200/50" />
 
-              <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Total de Itens:</span>
-                  <span className="font-semibold">{totalItems}</span>
+              <div className="bg-gray-50/50 backdrop-blur-sm rounded-xl p-6 border border-gray-200/30">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-gray-600 font-light">Total de Itens</span>
+                  <span className="font-medium text-gray-900">{totalItems}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-gray-800">Total:</span>
-                  <span className="text-2xl font-bold text-green-600">
+                  <span className="text-lg font-medium text-gray-900">Total</span>
+                  <span className="text-3xl font-light text-gray-900">
                     R$ {totalValue.toFixed(2)}
                   </span>
                 </div>
@@ -107,7 +104,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
               <Button 
                 onClick={onProcessSale}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 text-lg font-semibold"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white py-4 text-lg font-light rounded-xl transition-all duration-300 hover:shadow-lg"
               >
                 <Receipt className="w-5 h-5 mr-2" />
                 Registrar Venda

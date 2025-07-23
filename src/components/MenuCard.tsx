@@ -31,60 +31,61 @@ const MenuCard: React.FC<MenuCardProps> = ({
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-orange-200">
-      <CardHeader className="pb-3">
+    <Card className="group hover:shadow-2xl transition-all duration-500 border-0 bg-white/70 backdrop-blur-md hover:bg-white/80 rounded-2xl overflow-hidden">
+      <CardHeader className="pb-4">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <CardTitle className="text-lg font-bold text-gray-800 group-hover:text-orange-600 transition-colors">
+            <CardTitle className="text-lg font-medium text-gray-900 group-hover:text-gray-800 transition-colors mb-2">
               {item.name}
             </CardTitle>
-            <CardDescription className="text-gray-600 mt-1">
+            <CardDescription className="text-gray-600 text-sm font-light leading-relaxed">
               {item.description}
             </CardDescription>
           </div>
-          <Badge variant="secondary" className="ml-2 bg-orange-100 text-orange-800">
-            {item.category}
-          </Badge>
         </div>
         
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-4">
           <div className="flex items-center space-x-4">
-            <span className="text-2xl font-bold text-green-600">
+            <span className="text-2xl font-light text-gray-900">
               R$ {item.price.toFixed(2)}
             </span>
-            <span className={`text-sm ${isOutOfStock ? 'text-red-500' : 'text-gray-500'}`}>
-              Estoque: {item.stock}
-            </span>
+            <Badge variant="secondary" className={`text-xs font-light ${
+              isOutOfStock 
+                ? 'bg-red-50 text-red-600 border-red-200' 
+                : 'bg-gray-50 text-gray-600 border-gray-200'
+            }`}>
+              {isOutOfStock ? 'Esgotado' : `${item.stock} disponível`}
+            </Badge>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
         {isOutOfStock ? (
-          <Button disabled className="w-full bg-gray-300">
+          <Button disabled className="w-full bg-gray-200 text-gray-500 rounded-xl h-12 font-light">
             Fora de Estoque
           </Button>
         ) : quantity === 0 ? (
           <Button 
             onClick={() => onAddToCart(item)}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 font-light transition-all duration-300 hover:shadow-lg"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
-            Adicionar ao Carrinho
+            Adicionar
           </Button>
         ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between bg-gray-50/50 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center space-x-4">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuantityChange(quantity - 1)}
-                className="h-8 w-8 p-0 border-orange-300 hover:bg-orange-50"
+                className="h-8 w-8 p-0 border-gray-300 hover:bg-gray-100 rounded-lg"
               >
                 <Minus className="w-4 h-4" />
               </Button>
               
-              <span className="font-semibold text-lg min-w-[2rem] text-center">
+              <span className="font-medium text-lg min-w-[2rem] text-center text-gray-900">
                 {quantity}
               </span>
               
@@ -93,15 +94,15 @@ const MenuCard: React.FC<MenuCardProps> = ({
                 size="sm"
                 onClick={() => handleQuantityChange(quantity + 1)}
                 disabled={quantity >= item.stock}
-                className="h-8 w-8 p-0 border-orange-300 hover:bg-orange-50"
+                className="h-8 w-8 p-0 border-gray-300 hover:bg-gray-100 rounded-lg"
               >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
             
             <div className="text-right">
-              <span className="text-sm text-gray-500">Subtotal:</span>
-              <p className="font-bold text-lg text-green-600">
+              <span className="text-xs text-gray-500 font-light">Subtotal</span>
+              <p className="font-medium text-lg text-gray-900">
                 R$ {(item.price * quantity).toFixed(2)}
               </p>
             </div>
