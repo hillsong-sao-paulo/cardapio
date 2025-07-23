@@ -37,22 +37,22 @@ const MenuCard: React.FC<MenuCardProps> = ({
           {/* Header com nome e preço */}
           <div className="flex items-start justify-between">
             <div className="flex-1 pr-3">
-              <h3 className="text-base font-semibold text-gray-900 leading-tight mb-1">
+              <h3 className="text-base font-semibold text-gray-900 leading-tight mb-1 font-sf">
                 {item.name}
               </h3>
-              <p className="text-sm text-gray-500 line-clamp-2 mb-2">
+              <p className="text-sm text-gray-500 line-clamp-2 mb-2 font-sf">
                 {item.description}
               </p>
               <div className="flex items-center space-x-2">
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-lg font-bold text-gray-900 font-sf">
                   R$ {item.price.toFixed(2)}
                 </span>
                 {isOutOfStock ? (
-                  <Badge variant="destructive" className="text-xs">
+                  <Badge variant="destructive" className="text-xs font-sf">
                     Esgotado
                   </Badge>
                 ) : (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs font-sf">
                     {item.stock} disponível
                   </Badge>
                 )}
@@ -62,19 +62,19 @@ const MenuCard: React.FC<MenuCardProps> = ({
 
           {/* Controles de quantidade */}
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="text-xs text-gray-400 uppercase tracking-wide">
+            <div className="text-xs text-gray-400 uppercase tracking-wide font-sf">
               Quantidade
             </div>
             
             <div className="flex items-center">
               {isOutOfStock ? (
-                <div className="bg-gray-100 text-gray-400 px-4 py-2 rounded-full text-sm font-medium">
+                <div className="bg-gray-100 text-gray-400 px-4 py-2 rounded-full text-sm font-medium font-sf">
                   Indisponível
                 </div>
               ) : quantity === 0 ? (
                 <Button 
                   onClick={() => onAddToCart(item)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full text-sm font-medium h-auto"
+                  className="bg-app-blue hover:bg-app-blue-hover text-white px-6 py-2 rounded-full text-sm font-medium h-auto font-sf"
                 >
                   Adicionar
                 </Button>
@@ -84,12 +84,12 @@ const MenuCard: React.FC<MenuCardProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleQuantityChange(quantity - 1)}
-                    className="h-8 w-8 rounded-full p-0 hover:bg-red-100 text-red-500 hover:text-red-600"
+                    className="h-8 w-8 rounded-full p-0 hover:bg-app-blue-light text-app-blue hover:text-app-blue-hover"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
                   
-                  <span className="font-semibold text-base min-w-[2.5rem] text-center text-gray-900">
+                  <span className="font-semibold text-base min-w-[2.5rem] text-center text-gray-900 font-sf">
                     {quantity}
                   </span>
                   
@@ -98,7 +98,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
                     size="sm"
                     onClick={() => handleQuantityChange(quantity + 1)}
                     disabled={quantity >= item.stock}
-                    className="h-8 w-8 rounded-full p-0 hover:bg-red-100 text-red-500 hover:text-red-600 disabled:opacity-50"
+                    className="h-8 w-8 rounded-full p-0 hover:bg-app-blue-light text-app-blue hover:text-app-blue-hover disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>

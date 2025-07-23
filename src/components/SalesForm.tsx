@@ -132,10 +132,10 @@ const SalesForm: React.FC = () => {
       {/* Header fixo */}
       <div className="sticky top-0 z-40 bg-white shadow-sm border-b">
         <div className="px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900 font-sf">
             Cardápio
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 font-sf">
             Escolha seus itens favoritos
           </p>
         </div>
@@ -168,7 +168,7 @@ const SalesForm: React.FC = () => {
       {salesHistory.length > 0 && (
         <div className="hidden md:block mt-12 max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 font-sf">
               Histórico de Vendas
             </h2>
             <div className="space-y-3">
@@ -176,14 +176,14 @@ const SalesForm: React.FC = () => {
                 <div key={sale.id} className="bg-gray-50 rounded-xl p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-gray-900 font-sf">
                         Venda #{sale.id}
                       </span>
-                      <span className="text-sm text-gray-500 ml-4">
+                      <span className="text-sm text-gray-500 ml-4 font-sf">
                         {sale.timestamp.toLocaleString('pt-BR')}
                       </span>
                     </div>
-                    <span className="text-lg font-bold text-gray-900">
+                    <span className="text-lg font-bold text-gray-900 font-sf">
                       R$ {sale.total.toFixed(2)}
                     </span>
                   </div>
