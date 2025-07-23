@@ -31,15 +31,10 @@ const MenuCard: React.FC<MenuCardProps> = ({
   };
 
   return (
-    <Card className="transition-all duration-300 border-gray-200 bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden">
+    <Card className="transition-all duration-300 border-gray-200/50 bg-white/60 backdrop-blur-sm rounded-xl overflow-hidden">
       <CardContent className="p-4">
-        <div className="flex items-center space-x-4">
-          {/* Placeholder circular à esquerda */}
-          <div className="flex-shrink-0 w-14 h-14 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center">
-            <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
-          </div>
-          
-          {/* Informações do produto no centro */}
+        <div className="flex items-center justify-between space-x-4">
+          {/* Informações do produto */}
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-medium text-gray-900 truncate">
               {item.name}
