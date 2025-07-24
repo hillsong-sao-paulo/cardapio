@@ -36,7 +36,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     >
       <ShoppingCart className="w-6 h-6" />
       {totalItems > 0 && (
-        <Badge className="absolute -top-2 -right-2 bg-white text-app-blue rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-app-blue font-sf">
+        <Badge className="absolute -top-2 -right-2 bg-black text-white rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-black font-sf">
           {totalItems}
         </Badge>
       )}
