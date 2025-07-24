@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -26,34 +27,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
   const isMobile = useIsMobile();
-
-  const StickyBottomBar = () => {
-    if (cartItems.length === 0) return null;
-
-    return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-900 font-sf">
-                {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-              </p>
-              <p className="text-lg font-bold text-app-blue font-sf">
-                R$ {totalValue.toFixed(2)}
-              </p>
-            </div>
-            
-            <Button
-              onClick={() => onOpenChange(true)}
-              className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
-            >
-              <ShoppingCart className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const CartContent = () => (
     <div className="space-y-4">
@@ -125,44 +98,38 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   if (!isMobile) {
     return (
-      <>
-        <StickyBottomBar />
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-          <SheetContent className="w-full sm:max-w-lg bg-white border-0">
-            <SheetHeader>
-              <SheetTitle className="flex items-center text-xl font-bold text-gray-900 font-sf">
-                <ShoppingCart className="w-5 h-5 mr-2 text-app-blue" />
-                Seu Pedido
-              </SheetTitle>
-            </SheetHeader>
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-lg bg-white border-0">
+          <SheetHeader>
+            <SheetTitle className="flex items-center text-xl font-bold text-gray-900 font-sf">
+              <ShoppingCart className="w-5 h-5 mr-2 text-app-blue" />
+              Seu Pedido
+            </SheetTitle>
+          </SheetHeader>
 
-            <div className="mt-6">
-              <CartContent />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </>
+          <div className="mt-6">
+            <CartContent />
+          </div>
+        </SheetContent>
+      </Sheet>
     );
   }
 
   return (
-    <>
-      <StickyBottomBar />
-      <Drawer open={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent className="bg-white border-0 max-h-[85vh]">
-          <DrawerHeader className="pb-4">
-            <DrawerTitle className="flex items-center justify-center text-xl font-bold text-gray-900 font-sf">
-              <ShoppingCart className="w-5 h-5 mr-2 text-app-blue" />
-              Seu Pedido
-            </DrawerTitle>
-          </DrawerHeader>
+    <Drawer open={isOpen} onOpenChange={onOpenChange}>
+      <DrawerContent className="bg-white border-0 max-h-[85vh]">
+        <DrawerHeader className="pb-4">
+          <DrawerTitle className="flex items-center justify-center text-xl font-bold text-gray-900 font-sf">
+            <ShoppingCart className="w-5 h-5 mr-2 text-app-blue" />
+            Seu Pedido
+          </DrawerTitle>
+        </DrawerHeader>
 
-          <div className="px-4 pb-6 overflow-y-auto">
-            <CartContent />
-          </div>
-        </DrawerContent>
-      </Drawer>
-    </>
+        <div className="px-4 pb-6 overflow-y-auto">
+          <CartContent />
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 
