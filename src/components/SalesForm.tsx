@@ -8,6 +8,7 @@ import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
 import { MenuItem, CartItem, SaleRecord, StockItem } from '../types/inventory';
 import { menuItems as initialMenuItems, stockItems as initialStockItems } from '../data/menuData';
+
 const SalesForm: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [stockItems, setStockItems] = useState<StockItem[]>(initialStockItems);
@@ -15,9 +16,8 @@ const SalesForm: React.FC = () => {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const addToCart = (item: MenuItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
     if (existingItem) {
@@ -31,6 +31,7 @@ const SalesForm: React.FC = () => {
       setCartItems([...cartItems, newCartItem]);
     }
   };
+
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
@@ -42,18 +43,21 @@ const SalesForm: React.FC = () => {
       } : item));
     }
   };
+
   const updateStock = (itemId: string, quantityUsed: number) => {
     setStockItems(currentStock => currentStock.map(stockItem => stockItem.id === itemId ? {
       ...stockItem,
       currentStock: stockItem.currentStock - quantityUsed
     } : stockItem));
   };
+
   const updateMenuItemStock = (itemId: string, quantityUsed: number) => {
     setMenuItems(currentMenu => currentMenu.map(menuItem => menuItem.id === itemId ? {
       ...menuItem,
       stock: menuItem.stock - quantityUsed
     } : menuItem));
   };
+
   const processSale = () => {
     if (cartItems.length === 0) {
       toast({
@@ -106,35 +110,65 @@ const SalesForm: React.FC = () => {
     // Mostrar tela de sucesso ao invés do toast
     setShowSuccessScreen(true);
   };
+
   const getCartItem = (itemId: string) => {
     return cartItems.find(item => item.menuItem.id === itemId);
   };
-  return <div className="min-h-screen bg-gray-50">
-      {/* Header fixo */}
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header fixo com logo */}
       <div className="sticky top-0 z-40 bg-white shadow-sm border-b">
         <div className="px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
-          <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+              <img 
+                src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
+                alt="Hillsong Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
+              <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Lista de produtos */}
       <div className="px-4 py-4 pb-24">
         <div className="max-w-md mx-auto">
-          {menuItems.map(item => <MenuCard key={item.id} item={item} cartItem={getCartItem(item.id)} onAddToCart={addToCart} onUpdateQuantity={updateQuantity} />)}
+          {menuItems.map(item => (
+            <MenuCard 
+              key={item.id} 
+              item={item} 
+              cartItem={getCartItem(item.id)} 
+              onAddToCart={addToCart} 
+              onUpdateQuantity={updateQuantity} 
+            />
+          ))}
         </div>
       </div>
 
-      <CartSidebar cartItems={cartItems} onUpdateQuantity={updateQuantity} onProcessSale={processSale} isOpen={isCartOpen} onOpenChange={setIsCartOpen} />
+      <CartSidebar 
+        cartItems={cartItems} 
+        onUpdateQuantity={updateQuantity} 
+        onProcessSale={processSale} 
+        isOpen={isCartOpen} 
+        onOpenChange={setIsCartOpen} 
+      />
 
       {/* Histórico de Vendas - apenas em desktop */}
-      {salesHistory.length > 0 && <div className="hidden md:block mt-12 max-w-4xl mx-auto px-4">
+      {salesHistory.length > 0 && (
+        <div className="hidden md:block mt-12 max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6 font-sf">
               Histórico de Vendas
             </h2>
             <div className="space-y-3">
-              {salesHistory.slice(0, 5).map(sale => <div key={sale.id} className="bg-gray-50 rounded-xl p-4">
+              {salesHistory.slice(0, 5).map(sale => (
+                <div key={sale.id} className="bg-gray-50 rounded-xl p-4">
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="font-semibold text-gray-900 font-sf">
@@ -148,12 +182,19 @@ const SalesForm: React.FC = () => {
                       R$ {sale.total.toFixed(2)}
                     </span>
                   </div>
-                </div>)}
+                </div>
+              ))}
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
-      <SuccessScreen isVisible={showSuccessScreen} onClose={() => setShowSuccessScreen(false)} />
-    </div>;
+      <SuccessScreen 
+        isVisible={showSuccessScreen} 
+        onClose={() => setShowSuccessScreen(false)} 
+      />
+    </div>
+  );
 };
+
 export default SalesForm;
