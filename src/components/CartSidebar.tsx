@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -27,12 +26,35 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
   const isMobile = useIsMobile();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Mostrar quando rolar para baixo, esconder quando rolar para cima
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(true);
+      } else if (currentScrollY < lastScrollY) {
+        setIsVisible(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const StickyBottomBar = () => {
     if (cartItems.length === 0) return null;
 
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-4">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 p-4 pb-4 transition-transform duration-300 ${
+        isVisible ? 'translate-y-0' : 'translate-y-full'
+      }`}>
         <div className="bg-app-blue/95 backdrop-blur-sm border border-app-blue shadow-lg rounded-[20px] mx-4">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
