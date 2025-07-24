@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { ThumbsUp, Smile } from 'lucide-react';
 
 interface SuccessScreenProps {
   isVisible: boolean;
@@ -39,16 +38,20 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ isVisible, onClose }) => 
       <div className="text-center animate-scale-in">
         <div className="mb-6 flex justify-center">
           <div className="relative">
-            <ThumbsUp 
-              className={`w-16 h-16 text-white transition-all duration-500 ${
+            <div 
+              className={`text-6xl transition-all duration-500 ${
                 showHappyFace ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
               }`}
-            />
-            <Smile 
-              className={`absolute inset-0 w-16 h-16 text-white transition-all duration-500 ${
+            >
+              👍
+            </div>
+            <div 
+              className={`absolute inset-0 text-6xl transition-all duration-500 ${
                 showHappyFace ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
               }`}
-            />
+            >
+              😊
+            </div>
           </div>
         </div>
         
