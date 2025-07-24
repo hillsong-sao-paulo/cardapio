@@ -30,13 +30,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   const CartButton = () => (
     <Button 
-      className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-app-blue hover:bg-app-blue-hover text-black shadow-lg border-0 p-0 transition-all duration-300"
+      className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-app-blue hover:bg-app-blue-hover text-white shadow-lg border-0 p-0 transition-all duration-300"
       size="icon"
       onClick={() => onOpenChange(true)}
     >
       <ShoppingCart className="w-6 h-6" />
       {totalItems > 0 && (
-        <Badge className="absolute -top-2 -right-2 bg-black text-white rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-black font-sf">
+        <Badge className="absolute -top-2 -right-2 bg-white text-app-blue rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-app-blue font-sf">
           {totalItems}
         </Badge>
       )}
