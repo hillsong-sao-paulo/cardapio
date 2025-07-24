@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Trash2, Receipt } from 'lucide-react';
 import { CartItem } from '../types/inventory';
-import { useMediaQuery } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CartSidebarProps {
   cartItems: CartItem[];
@@ -26,7 +25,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 }) => {
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isMobile = useIsMobile();
 
   const CartButton = () => (
     <Button 
@@ -110,7 +109,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     </div>
   );
 
-  if (isDesktop) {
+  if (!isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
         <SheetTrigger asChild>
