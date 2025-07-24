@@ -1,0 +1,63 @@
+
+import React, { useState, useEffect } from 'react';
+import { ThumbsUp, Smile } from 'lucide-react';
+
+interface SuccessScreenProps {
+  isVisible: boolean;
+  onClose: () => void;
+}
+
+const SuccessScreen: React.FC<SuccessScreenProps> = ({ isVisible, onClose }) => {
+  const [showHappyFace, setShowHappyFace] = useState(false);
+
+  useEffect(() => {
+    if (isVisible) {
+      // Reseta o estado quando a tela aparece
+      setShowHappyFace(false);
+      
+      // Transiciona para cara feliz após 1 segundo
+      const iconTimer = setTimeout(() => {
+        setShowHappyFace(true);
+      }, 1000);
+
+      // Auto-dismiss após 3 segundos
+      const dismissTimer = setTimeout(() => {
+        onClose();
+      }, 3000);
+
+      return () => {
+        clearTimeout(iconTimer);
+        clearTimeout(dismissTimer);
+      };
+    }
+  }, [isVisible, onClose]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-green-500/20 backdrop-blur-sm animate-fade-in">
+      <div className="text-center animate-scale-in">
+        <div className="mb-6 flex justify-center">
+          <div className="relative">
+            <ThumbsUp 
+              className={`w-16 h-16 text-green-600 transition-all duration-500 ${
+                showHappyFace ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
+              }`}
+            />
+            <Smile 
+              className={`absolute inset-0 w-16 h-16 text-green-600 transition-all duration-500 ${
+                showHappyFace ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+              }`}
+            />
+          </div>
+        </div>
+        
+        <h2 className="text-2xl font-bold text-gray-900 font-sf">
+          Venda Registrada
+        </h2>
+      </div>
+    </div>
+  );
+};
+
+export default SuccessScreen;
