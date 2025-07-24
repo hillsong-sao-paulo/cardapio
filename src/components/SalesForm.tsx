@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
 import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
+import CategoryTabs from './CategoryTabs';
 import { MenuItem, CartItem, SaleRecord, StockItem } from '../types/inventory';
 import { menuItems as initialMenuItems, stockItems as initialStockItems } from '../data/menuData';
 
@@ -16,7 +17,15 @@ const SalesForm: React.FC = () => {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
+
+  const filteredMenuItems = useMemo(() => {
+    if (activeCategory === 'Todos') {
+      return menuItems;
+    }
+    return menuItems.filter(item => item.category === activeCategory);
+  }, [menuItems, activeCategory]);
 
   const addToCart = (item: MenuItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
@@ -136,10 +145,16 @@ const SalesForm: React.FC = () => {
         </div>
       </div>
 
+      {/* Category Tabs */}
+      <CategoryTabs 
+        activeCategory={activeCategory} 
+        onCategoryChange={setActiveCategory} 
+      />
+
       {/* Lista de produtos */}
       <div className="px-4 py-4 pb-24">
         <div className="max-w-md mx-auto">
-          {menuItems.map(item => (
+          {filteredMenuItems.map(item => (
             <MenuCard 
               key={item.id} 
               item={item} 

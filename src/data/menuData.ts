@@ -19,7 +19,7 @@ export const menuItems: MenuItem[] = [
     description: 'Sobreasas de frango empanadas, servidas com molho blue cheese',
     price: 25,
     stock: 10,
-    category: 'Aperitivos',
+    category: 'Pratos',
     subItems: [
       { id: 'chicken-wings', name: 'Sobreasas de Frango', quantityUsed: 5 }
     ]
@@ -30,7 +30,7 @@ export const menuItems: MenuItem[] = [
     description: 'Batatas fritas cobertas com molho cheddar ranch e bacon crocante',
     price: 25,
     stock: 8,
-    category: 'Aperitivos',
+    category: 'Pratos',
     subItems: [
       { id: 'french-fries', name: 'Batata Frita', quantityUsed: 1 }
     ]
@@ -41,7 +41,7 @@ export const menuItems: MenuItem[] = [
     description: 'Costelinhas suínas com molho barbecue ou billabong',
     price: 25,
     stock: 6,
-    category: 'Carnes',
+    category: 'Pratos',
     subItems: [
       { id: 'pork-ribs', name: 'Costelinhas Suínas', quantityUsed: 4 }
     ]
@@ -52,7 +52,7 @@ export const menuItems: MenuItem[] = [
     description: 'Costelinhas suínas acompanhadas de batata frita',
     price: 40,
     stock: 5,
-    category: 'Combinações',
+    category: 'Pratos',
     subItems: [
       { id: 'pork-ribs', name: 'Costelinhas Suínas', quantityUsed: 4 },
       { id: 'french-fries', name: 'Batata Frita', quantityUsed: 1 }
@@ -64,7 +64,7 @@ export const menuItems: MenuItem[] = [
     description: 'Sobreasas de frango empanadas com batata frita',
     price: 40,
     stock: 7,
-    category: 'Combinações',
+    category: 'Pratos',
     subItems: [
       { id: 'chicken-wings', name: 'Sobreasas de Frango', quantityUsed: 5 },
       { id: 'french-fries', name: 'Batata Frita', quantityUsed: 1 }
@@ -76,7 +76,7 @@ export const menuItems: MenuItem[] = [
     description: 'Brownie de chocolate com nozes',
     price: 10,
     stock: 15,
-    category: 'Sobremesas',
+    category: 'Doces',
     subItems: [
       { id: 'brownie', name: 'Brownie', quantityUsed: 1 }
     ]
@@ -109,7 +109,7 @@ export const menuItems: MenuItem[] = [
     description: 'Fatias de filé mignon com molho gorgonzola e purê',
     price: 45,
     stock: 4,
-    category: 'Pratos Principais',
+    category: 'Almoço',
     subItems: [
       { id: 'steak', name: 'Filé Mignon', quantityUsed: 1 },
       { id: 'rice', name: 'Arroz Pilaf', quantityUsed: 1 },
