@@ -28,18 +28,27 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const isMobile = useIsMobile();
 
   const CartButton = () => (
-    <Button 
-      className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-black hover:bg-gray-800 text-white shadow-lg border-0 p-0 transition-all duration-300"
-      size="icon"
-      onClick={() => onOpenChange(true)}
-    >
-      <ShoppingCart className="w-6 h-6" />
+    <div className="fixed bottom-4 right-4 z-50">
+      {/* Mini preview quando há itens no carrinho */}
       {totalItems > 0 && (
-        <Badge className="absolute -top-2 -right-2 bg-white text-black rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-black font-sf">
-          {totalItems}
-        </Badge>
+        <div className="mb-2 bg-black text-white px-3 py-1 rounded-full text-sm font-bold font-sf shadow-lg animate-fade-in">
+          R$ {totalValue.toFixed(2)}
+        </div>
       )}
-    </Button>
+      
+      <Button 
+        className="w-14 h-14 rounded-full bg-black hover:bg-gray-800 text-white shadow-lg border-0 p-0 transition-all duration-300"
+        size="icon"
+        onClick={() => onOpenChange(true)}
+      >
+        <ShoppingCart className="w-6 h-6" />
+        {totalItems > 0 && (
+          <Badge className="absolute -top-2 -right-2 bg-white text-black rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-black font-sf">
+            {totalItems}
+          </Badge>
+        )}
+      </Button>
+    </div>
   );
 
   const CartContent = () => (
