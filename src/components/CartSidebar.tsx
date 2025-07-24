@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Trash2, Receipt } from 'lucide-react';
+import { ShoppingCart, Trash2, Receipt, Plus, Minus } from 'lucide-react';
 import { CartItem } from '../types/inventory';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -27,29 +28,52 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const totalValue = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
   const isMobile = useIsMobile();
 
-  const CartButton = () => (
-    <div className="fixed bottom-4 right-4 z-50">
-      {/* Mini preview quando há itens no carrinho */}
-      {totalItems > 0 && (
-        <div className="mb-2 bg-black text-white px-3 py-1 rounded-full text-sm font-bold font-sf shadow-lg animate-fade-in">
-          R$ {totalValue.toFixed(2)}
+  const StickyBottomBar = () => {
+    if (cartItems.length === 0) return null;
+
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <ShoppingCart className="w-6 h-6 text-app-blue" />
+                <Badge className="absolute -top-2 -right-2 bg-app-blue text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold font-sf">
+                  {totalItems}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 font-sf">
+                  {totalItems} {totalItems === 1 ? 'item' : 'itens'}
+                </p>
+                <p className="text-lg font-bold text-app-blue font-sf">
+                  R$ {totalValue.toFixed(2)}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(true)}
+                className="border-app-blue text-app-blue hover:bg-app-blue hover:text-white font-sf"
+              >
+                Ver Carrinho
+              </Button>
+              <Button
+                onClick={onProcessSale}
+                className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
+              >
+                <Receipt className="w-4 h-4 mr-1" />
+                Finalizar
+              </Button>
+            </div>
+          </div>
         </div>
-      )}
-      
-      <Button 
-        className="w-14 h-14 rounded-full bg-black hover:bg-gray-800 text-white shadow-lg border-0 p-0 transition-all duration-300"
-        size="icon"
-        onClick={() => onOpenChange(true)}
-      >
-        <ShoppingCart className="w-6 h-6" />
-        {totalItems > 0 && (
-          <Badge className="absolute -top-2 -right-2 bg-white text-black rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-black font-sf">
-            {totalItems}
-          </Badge>
-        )}
-      </Button>
-    </div>
-  );
+      </div>
+    );
+  };
 
   const CartContent = () => (
     <div className="space-y-4">
@@ -122,7 +146,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   if (!isMobile) {
     return (
       <>
-        <CartButton />
+        <StickyBottomBar />
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
           <SheetContent className="w-full sm:max-w-lg bg-white border-0">
             <SheetHeader>
@@ -143,7 +167,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   return (
     <>
-      <CartButton />
+      <StickyBottomBar />
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
         <DrawerContent className="bg-white border-0 max-h-[85vh]">
           <DrawerHeader className="pb-4">
