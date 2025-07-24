@@ -35,14 +35,11 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ isVisible, onClose }) => 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
-      {/* Backdrop com blur sutil */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      {/* Backdrop sólido */}
+      <div className="absolute inset-0 bg-black/50" />
       
       {/* Lightbox */}
-      <div className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-scale-in">
-        {/* Gradiente sutil no fundo */}
-        <div className="absolute inset-0 bg-gradient-to-br from-app-blue/20 to-app-blue/5 rounded-3xl" />
-        
+      <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-scale-in">
         {/* Conteúdo */}
         <div className="relative text-center">
           <div className="mb-6 flex justify-center">
@@ -64,18 +61,18 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ isVisible, onClose }) => 
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-white font-sf mb-2 drop-shadow-lg">
+          <h2 className="text-2xl font-bold text-gray-900 font-sf mb-2">
             Venda Registrada
           </h2>
           
-          <p className="text-white/80 font-sf text-sm">
+          <p className="text-gray-600 font-sf text-sm">
             Processada com sucesso
           </p>
           
           {/* Indicador de progresso sutil */}
           <div className="mt-6 flex justify-center">
-            <div className="w-16 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white/60 rounded-full animate-[slide-in-right_3s_ease-out]" />
+            <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-app-blue rounded-full animate-[slide-in-right_3s_ease-out]" />
             </div>
           </div>
         </div>
