@@ -7,15 +7,15 @@ import MenuCard from './MenuCard';
 import CartSidebar from './CartSidebar';
 import { MenuItem, CartItem, SaleRecord, StockItem } from '../types/inventory';
 import { menuItems as initialMenuItems, stockItems as initialStockItems } from '../data/menuData';
+
 const SalesForm: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [stockItems, setStockItems] = useState<StockItem[]>(initialStockItems);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const addToCart = (item: MenuItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
     if (existingItem) {
@@ -28,11 +28,8 @@ const SalesForm: React.FC = () => {
       };
       setCartItems([...cartItems, newCartItem]);
     }
-    toast({
-      title: "Item adicionado",
-      description: `${item.name} foi adicionado ao carrinho.`
-    });
   };
+
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
@@ -44,18 +41,21 @@ const SalesForm: React.FC = () => {
       } : item));
     }
   };
+
   const updateStock = (itemId: string, quantityUsed: number) => {
     setStockItems(currentStock => currentStock.map(stockItem => stockItem.id === itemId ? {
       ...stockItem,
       currentStock: stockItem.currentStock - quantityUsed
     } : stockItem));
   };
+
   const updateMenuItemStock = (itemId: string, quantityUsed: number) => {
     setMenuItems(currentMenu => currentMenu.map(menuItem => menuItem.id === itemId ? {
       ...menuItem,
       stock: menuItem.stock - quantityUsed
     } : menuItem));
   };
+
   const processSale = () => {
     if (cartItems.length === 0) {
       toast({
@@ -109,9 +109,11 @@ const SalesForm: React.FC = () => {
       description: `Venda de R$ ${saleRecord.total.toFixed(2)} foi registrada com sucesso.`
     });
   };
+
   const getCartItem = (itemId: string) => {
     return cartItems.find(item => item.menuItem.id === itemId);
   };
+
   return <div className="min-h-screen bg-gray-50">
       {/* Header fixo */}
       <div className="sticky top-0 z-40 bg-white shadow-sm border-b">
@@ -157,4 +159,5 @@ const SalesForm: React.FC = () => {
         </div>}
     </div>;
 };
+
 export default SalesForm;
