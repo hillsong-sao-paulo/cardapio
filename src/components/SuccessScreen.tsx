@@ -35,24 +35,24 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ isVisible, onClose }) => 
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-green-500/20 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-app-blue/20 backdrop-blur-md animate-fade-in">
       <div className="text-center animate-scale-in">
         <div className="mb-6 flex justify-center">
           <div className="relative">
             <ThumbsUp 
-              className={`w-16 h-16 text-green-600 transition-all duration-500 ${
+              className={`w-16 h-16 text-white transition-all duration-500 ${
                 showHappyFace ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
               }`}
             />
             <Smile 
-              className={`absolute inset-0 w-16 h-16 text-green-600 transition-all duration-500 ${
+              className={`absolute inset-0 w-16 h-16 text-white transition-all duration-500 ${
                 showHappyFace ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
               }`}
             />
           </div>
         </div>
         
-        <h2 className="text-2xl font-bold text-gray-900 font-sf">
+        <h2 className="text-2xl font-bold text-white font-sf">
           Venda Registrada
         </h2>
       </div>
