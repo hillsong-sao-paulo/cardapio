@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -53,10 +52,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     if (cartItems.length === 0) return null;
 
     return (
-      <div className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
-        isMinimized ? 'translate-y-[95%]' : 'translate-y-0'
+      <div className={`fixed bottom-0 left-0 right-0 z-50 p-4 pb-4 transition-transform duration-300 ${
+        isMinimized ? 'translate-y-20' : 'translate-y-0'
       }`}>
-        <div className="bg-app-blue/95 backdrop-blur-sm border border-app-blue shadow-lg rounded-t-[20px] mx-4 mb-4">
+        <div className="bg-app-blue/95 backdrop-blur-sm border border-app-blue shadow-lg rounded-[20px] mx-4">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
@@ -137,15 +136,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
             </div>
           </div>
 
-          <div className="pb-6 pt-2">
-            <Button 
-              onClick={onProcessSale}
-              className="w-full bg-app-blue hover:bg-app-blue-hover text-white py-4 text-lg font-bold rounded-xl transition-all duration-300 font-sf"
-            >
-              <Receipt className="w-5 h-5 mr-2" />
-              Finalizar Pedido
-            </Button>
-          </div>
+          <Button 
+            onClick={onProcessSale}
+            className="w-full bg-app-blue hover:bg-app-blue-hover text-white py-4 text-lg font-bold rounded-xl transition-all duration-300 font-sf"
+          >
+            <Receipt className="w-5 h-5 mr-2" />
+            Finalizar Pedido
+          </Button>
         </>
       )}
     </div>
@@ -185,7 +182,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
             </DrawerTitle>
           </DrawerHeader>
 
-          <div className="px-4 overflow-y-auto flex-1">
+          <div className="px-4 pb-6 overflow-y-auto">
             <CartContent />
           </div>
         </DrawerContent>
