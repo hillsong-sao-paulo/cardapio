@@ -76,7 +76,7 @@ export const menuItems: MenuItem[] = [
     description: 'Brownie de chocolate com nozes',
     price: 10,
     stock: 15,
-    category: 'Doces',
+    category: 'Sobremesa',
     subItems: [
       { id: 'brownie', name: 'Brownie', quantityUsed: 1 }
     ]

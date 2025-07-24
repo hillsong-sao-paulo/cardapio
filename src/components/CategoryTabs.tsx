@@ -15,7 +15,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   const categories = [
     { id: 'Todos', label: 'Todos', icon: null },
     { id: 'Pratos', label: 'Pratos', icon: Utensils },
-    { id: 'Doces', label: 'Doces', icon: Cookie },
+    { id: 'Sobremesa', label: 'Sobremesa', icon: Cookie },
     { id: 'Bebidas', label: 'Bebidas', icon: GlassWater },
     { id: 'Almoço', label: 'Almoço', icon: ChefHat },
   ];
