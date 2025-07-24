@@ -51,22 +51,12 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenChange(true)}
-                className="border-app-blue text-app-blue hover:bg-app-blue hover:text-white font-sf"
-              >
-                <ShoppingCart className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={onProcessSale}
-                className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
-              >
-                <CreditCard className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button
+              onClick={() => onOpenChange(true)}
+              className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
+            >
+              <ShoppingCart className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
