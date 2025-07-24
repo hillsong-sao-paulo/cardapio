@@ -8,7 +8,6 @@ import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
 import { MenuItem, CartItem, SaleRecord, StockItem } from '../types/inventory';
 import { menuItems as initialMenuItems, stockItems as initialStockItems } from '../data/menuData';
-
 const SalesForm: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [stockItems, setStockItems] = useState<StockItem[]>(initialStockItems);
@@ -16,8 +15,9 @@ const SalesForm: React.FC = () => {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const addToCart = (item: MenuItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
     if (existingItem) {
@@ -31,7 +31,6 @@ const SalesForm: React.FC = () => {
       setCartItems([...cartItems, newCartItem]);
     }
   };
-
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
@@ -43,21 +42,18 @@ const SalesForm: React.FC = () => {
       } : item));
     }
   };
-
   const updateStock = (itemId: string, quantityUsed: number) => {
     setStockItems(currentStock => currentStock.map(stockItem => stockItem.id === itemId ? {
       ...stockItem,
       currentStock: stockItem.currentStock - quantityUsed
     } : stockItem));
   };
-
   const updateMenuItemStock = (itemId: string, quantityUsed: number) => {
     setMenuItems(currentMenu => currentMenu.map(menuItem => menuItem.id === itemId ? {
       ...menuItem,
       stock: menuItem.stock - quantityUsed
     } : menuItem));
   };
-
   const processSale = () => {
     if (cartItems.length === 0) {
       toast({
@@ -106,22 +102,19 @@ const SalesForm: React.FC = () => {
     // Limpar carrinho
     setCartItems([]);
     setIsCartOpen(false);
-    
+
     // Mostrar tela de sucesso ao invés do toast
     setShowSuccessScreen(true);
   };
-
   const getCartItem = (itemId: string) => {
     return cartItems.find(item => item.menuItem.id === itemId);
   };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
+  return <div className="min-h-screen bg-gray-50">
       {/* Header fixo */}
       <div className="sticky top-0 z-40 bg-white shadow-sm border-b">
         <div className="px-4 py-4">
           <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
-          <p className="text-sm text-gray-500 font-sf">Outback no Encounterfest 25</p>
+          <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
         </div>
       </div>
 
@@ -132,13 +125,7 @@ const SalesForm: React.FC = () => {
         </div>
       </div>
 
-      <CartSidebar 
-        cartItems={cartItems} 
-        onUpdateQuantity={updateQuantity} 
-        onProcessSale={processSale} 
-        isOpen={isCartOpen} 
-        onOpenChange={setIsCartOpen} 
-      />
+      <CartSidebar cartItems={cartItems} onUpdateQuantity={updateQuantity} onProcessSale={processSale} isOpen={isCartOpen} onOpenChange={setIsCartOpen} />
 
       {/* Histórico de Vendas - apenas em desktop */}
       {salesHistory.length > 0 && <div className="hidden md:block mt-12 max-w-4xl mx-auto px-4">
@@ -166,12 +153,7 @@ const SalesForm: React.FC = () => {
           </div>
         </div>}
 
-      <SuccessScreen 
-        isVisible={showSuccessScreen} 
-        onClose={() => setShowSuccessScreen(false)} 
-      />
-    </div>
-  );
+      <SuccessScreen isVisible={showSuccessScreen} onClose={() => setShowSuccessScreen(false)} />
+    </div>;
 };
-
 export default SalesForm;
