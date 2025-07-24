@@ -189,6 +189,19 @@ const SalesForm: React.FC = () => {
         </div>
       )}
 
+      {/* Rodapé com logo */}
+      <footer className="bg-white border-t border-gray-200 mt-8 py-6">
+        <div className="max-w-md mx-auto px-4">
+          <div className="flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/397f96e7-0d6d-4eb1-a7f9-2d0c8fff89fd.png" 
+              alt="Hillsong São Paulo" 
+              className="h-8 opacity-60"
+            />
+          </div>
+        </div>
+      </footer>
+
       <SuccessScreen 
         isVisible={showSuccessScreen} 
         onClose={() => setShowSuccessScreen(false)} 
