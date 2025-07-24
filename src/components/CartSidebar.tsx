@@ -53,7 +53,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
     return (
       <div className={`fixed bottom-0 left-0 right-0 z-50 p-4 pb-4 transition-transform duration-300 ${
-        isMinimized ? 'translate-y-12' : 'translate-y-0'
+        isMinimized ? 'translate-y-20' : 'translate-y-0'
       }`}>
         <div className="bg-app-blue/95 backdrop-blur-sm border border-app-blue shadow-lg rounded-[20px] mx-4">
           <div className="px-6 py-4">
