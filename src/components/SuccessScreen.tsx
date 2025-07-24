@@ -68,13 +68,6 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ isVisible, onClose }) => 
           <p className="text-gray-600 font-sf text-sm">
             Processada com sucesso
           </p>
-          
-          {/* Indicador de progresso sutil */}
-          <div className="mt-6 flex justify-center">
-            <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-app-blue rounded-full animate-[slide-in-right_3s_ease-out]" />
-            </div>
-          </div>
         </div>
       </div>
     </div>
