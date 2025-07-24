@@ -24,7 +24,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
     <div className="bg-white border-b border-gray-100 sticky top-[88px] z-30">
       <div className="px-4 py-3">
         <Tabs value={activeCategory} onValueChange={onCategoryChange}>
-          <TabsList className="bg-gray-50 p-1 h-auto w-full justify-start overflow-x-auto">
+          <TabsList className="bg-gray-50 p-1 h-auto w-full justify-start scrollbar-hide overflow-x-auto">
             <div className="flex space-x-1 min-w-max">
               {categories.map((category) => (
                 <TabsTrigger
