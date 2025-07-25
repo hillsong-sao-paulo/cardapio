@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -125,7 +126,7 @@ const MenuItems: React.FC = () => {
         noindex={true}
       />
       
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-screen-xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Itens do Cardápio</h1>
@@ -142,10 +143,12 @@ const MenuItems: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex-1">
-                    {item.name}
-                    <p className="text-sm text-gray-600 font-normal">
-                      {item.category?.name || 'Sem categoria'}
-                    </p>
+                    <div className="text-lg font-semibold mb-2">{item.name}</div>
+                    {item.category?.name && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.category.name}
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
