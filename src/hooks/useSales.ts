@@ -61,12 +61,29 @@ export const useCreateSale = () => {
       
       if (itemsError) throw itemsError;
 
-      // Update stock for each item using direct SQL update
+      // Update stock for each item - CORRIGIDO: subtrair quantidade do estoque atual
       for (const item of saleData.items) {
+        // Primeiro, buscar o estoque atual
+        const { data: currentItem, error: fetchError } = await supabase
+          .from('menu_items')
+          .select('stock')
+          .eq('id', item.menu_item_id)
+          .single();
+        
+        if (fetchError) throw fetchError;
+
+        // Verificar se há estoque suficiente
+        if (currentItem.stock < item.quantity) {
+          throw new Error(`Estoque insuficiente para o item. Disponível: ${currentItem.stock}, Solicitado: ${item.quantity}`);
+        }
+
+        // Subtrair a quantidade vendida do estoque atual
+        const newStock = currentItem.stock - item.quantity;
+        
         const { error: stockError } = await supabase
           .from('menu_items')
           .update({ 
-            stock: item.quantity,
+            stock: newStock,
             updated_at: new Date().toISOString()
           })
           .eq('id', item.menu_item_id);

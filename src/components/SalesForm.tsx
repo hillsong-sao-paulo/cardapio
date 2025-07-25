@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -23,16 +22,17 @@ const SalesForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Configurar realtime updates
+  // Configurar realtime updates para sincronização em tempo real
   useEffect(() => {
     const channel = supabase
       .channel('menu-updates')
       .on('postgres_changes', {
-        event: '*',
+        event: 'UPDATE',
         schema: 'public',
         table: 'menu_items'
-      }, () => {
-        // Invalidar cache quando houver mudanças
+      }, (payload) => {
+        console.log('Stock updated in real-time:', payload);
+        // Recarregar dados quando o estoque for atualizado
         window.location.reload();
       })
       .subscribe();
@@ -85,7 +85,7 @@ const SalesForm: React.FC = () => {
           stock: item.stock,
           category: item.category?.name || '',
           description: item.description || '',
-          subItems: [] // Não usando subItems mais
+          subItems: []
         },
         quantity: 1,
         subtotal: item.price
@@ -143,6 +143,12 @@ const SalesForm: React.FC = () => {
       setCartItems([]);
       setIsCartOpen(false);
       setShowSuccessScreen(true);
+
+      toast({
+        title: "Venda processada com sucesso!",
+        description: "O estoque foi atualizado automaticamente.",
+        variant: "default"
+      });
 
     } catch (error: any) {
       toast({
@@ -217,7 +223,7 @@ const SalesForm: React.FC = () => {
                 price: item.price,
                 stock: item.stock,
                 category: item.category?.name || '',
-                subItems: [] // Não usando subItems mais
+                subItems: []
               }}
               cartItem={getCartItem(item.id)} 
               onAddToCart={() => addToCart(item)} 
