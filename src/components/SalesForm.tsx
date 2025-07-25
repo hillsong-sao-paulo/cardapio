@@ -1,16 +1,16 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
 import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
 import CategoryTabs from './CategoryTabs';
-import { CartItem, SaleRecord } from '../types/inventory';
+import { CartItem } from '../types/inventory';
 import { MenuItemWithCategory } from '../types/database';
 import { useMenuItems } from '../hooks/useMenuItems';
 import { useCreateSale } from '../hooks/useSales';
-import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeStock } from '../hooks/useRealtimeStock';
 import { useNavigate } from 'react-router-dom';
 
 const SalesForm: React.FC = () => {
@@ -23,24 +23,8 @@ const SalesForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Configurar realtime updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('menu-updates')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'menu_items'
-      }, () => {
-        // Invalidar cache quando houver mudanças
-        window.location.reload();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  // Configurar realtime updates para estoque
+  useRealtimeStock();
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)));
@@ -85,7 +69,7 @@ const SalesForm: React.FC = () => {
           stock: item.stock,
           category: item.category?.name || '',
           description: item.description || '',
-          subItems: [] // Não usando subItems mais
+          subItems: []
         },
         quantity: 1,
         subtotal: item.price
@@ -137,6 +121,7 @@ const SalesForm: React.FC = () => {
         }))
       };
 
+      console.log('Processando venda:', saleData);
       await createSale.mutateAsync(saleData);
 
       // Limpar carrinho e mostrar sucesso
@@ -144,10 +129,27 @@ const SalesForm: React.FC = () => {
       setIsCartOpen(false);
       setShowSuccessScreen(true);
 
+      toast({
+        title: "Venda processada com sucesso!",
+        description: "O estoque foi atualizado automaticamente.",
+      });
+
     } catch (error: any) {
+      console.error('Erro ao processar venda:', error);
+      
+      let errorMessage = "Erro desconhecido ao processar a venda.";
+      
+      if (error.message?.includes('Estoque insuficiente')) {
+        errorMessage = error.message;
+      } else if (error.message?.includes('Item não encontrado')) {
+        errorMessage = "Um ou mais itens do carrinho não foram encontrados.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Erro ao processar venda",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -217,7 +219,7 @@ const SalesForm: React.FC = () => {
                 price: item.price,
                 stock: item.stock,
                 category: item.category?.name || '',
-                subItems: [] // Não usando subItems mais
+                subItems: []
               }}
               cartItem={getCartItem(item.id)} 
               onAddToCart={() => addToCart(item)} 

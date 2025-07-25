@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, AlertTriangle } from 'lucide-react';
 import { MenuItem, CartItem } from '../types/inventory';
 
 interface MenuCardProps {
@@ -21,6 +21,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
 }) => {
   const quantity = cartItem?.quantity || 0;
   const isOutOfStock = item.stock === 0;
+  const isLowStock = item.stock > 0 && item.stock <= 5;
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -28,6 +29,31 @@ const MenuCard: React.FC<MenuCardProps> = ({
     } else if (newQuantity <= item.stock) {
       onUpdateQuantity(item.id, newQuantity);
     }
+  };
+
+  const getStockBadge = () => {
+    if (isOutOfStock) {
+      return (
+        <Badge variant="destructive" className="text-xs font-sf">
+          Esgotado
+        </Badge>
+      );
+    }
+    
+    if (isLowStock) {
+      return (
+        <Badge variant="outline" className="text-xs font-sf border-orange-300 text-orange-600">
+          <AlertTriangle className="w-3 h-3 mr-1" />
+          Baixo: {item.stock}
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge variant="secondary" className="text-xs font-sf">
+        {item.stock} disponível
+      </Badge>
+    );
   };
 
   return (
@@ -47,15 +73,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
                 <span className="text-lg font-bold text-gray-900 font-sf">
                   R$ {item.price.toFixed(2)}
                 </span>
-                {isOutOfStock ? (
-                  <Badge variant="destructive" className="text-xs font-sf">
-                    Esgotado
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs font-sf">
-                    {item.stock} disponível
-                  </Badge>
-                )}
+                {getStockBadge()}
               </div>
             </div>
           </div>

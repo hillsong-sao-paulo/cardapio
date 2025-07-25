@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
+import { useRealtimeStock } from '@/hooks/useRealtimeStock';
 import { Category } from '@/types/database';
 
 const Categories: React.FC = () => {
@@ -16,6 +17,9 @@ const Categories: React.FC = () => {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const { toast } = useToast();
+
+  // Configurar realtime updates
+  useRealtimeStock();
 
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -83,14 +87,14 @@ const Categories: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <div className="w-full max-w-[1280px] mx-auto p-6">
         <div className="text-center">Carregando categorias...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="w-full max-w-[1280px] mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gerenciar Categorias</h1>
         <Button onClick={() => setShowForm(true)} className="gap-2">
