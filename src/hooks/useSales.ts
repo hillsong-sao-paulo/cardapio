@@ -71,7 +71,7 @@ export const useSales = () => {
         const { error: stockError } = await supabase.rpc('update_menu_item_stock', {
           item_id: item.menu_item_id,
           quantity_sold: item.quantity,
-        });
+        } as any);
 
         if (stockError) throw stockError;
       }
