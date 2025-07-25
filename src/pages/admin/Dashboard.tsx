@@ -7,7 +7,7 @@ import { useSales } from '@/hooks/useSales';
 
 const Dashboard: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
-  const { sales = [] } = useSales();
+  const { data: sales = [] } = useSales();
 
   const totalItems = menuItems.length;
   const totalStock = menuItems.reduce((sum, item) => sum + item.stock, 0);

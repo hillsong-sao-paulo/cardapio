@@ -1,253 +1,258 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useMenuItems } from '@/hooks/useMenuItems';
-import { useSales } from '@/hooks/useSales';
-import { MenuItem } from '@/types/database';
+import MenuCard from './MenuCard';
+import CartSidebar from './CartSidebar';
+import SuccessScreen from './SuccessScreen';
+import CategoryTabs from './CategoryTabs';
+import { CartItem, SaleRecord } from '../types/inventory';
+import { MenuItemWithCategory } from '../types/database';
+import { useMenuItems } from '../hooks/useMenuItems';
+import { useCreateSale } from '../hooks/useSales';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
-interface SalesFormProps {
-  onSuccess?: () => void;
-}
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  stock: number;
-}
-
-const SalesForm: React.FC<SalesFormProps> = ({ onSuccess }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerName, setCustomerName] = useState('');
+const SalesForm: React.FC = () => {
+  const { data: menuItems = [], isLoading } = useMenuItems();
+  const createSale = useCreateSale();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
-  const { data: menuItems, isLoading: isLoadingItems } = useMenuItems();
-  const { createSale } = useSales();
+  const navigate = useNavigate();
 
-  const addToCart = (item: MenuItem) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
-    
-    if (existingItem) {
-      if (existingItem.quantity >= item.stock) {
-        toast({
-          title: 'Estoque insuficiente',
-          description: `Apenas ${item.stock} unidades disponíveis`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      setCart(cart.map(cartItem =>
-        cartItem.id === item.id
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-      if (item.stock <= 0) {
-        toast({
-          title: 'Produto indisponível',
-          description: 'Este item está fora de estoque',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      setCart([...cart, {
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: 1,
-        stock: item.stock,
-      }]);
+  // Configurar realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('menu-updates')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'menu_items'
+      }, () => {
+        // Invalidar cache quando houver mudanças
+        window.location.reload();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)));
+    return ['Todos', ...cats];
+  }, [menuItems]);
+
+  const filteredMenuItems = useMemo(() => {
+    if (activeCategory === 'Todos') {
+      return menuItems;
     }
-  };
+    return menuItems.filter(item => item.category?.name === activeCategory);
+  }, [menuItems, activeCategory]);
 
-  const removeFromCart = (itemId: string) => {
-    setCart(cart.filter(item => item.id !== itemId));
-  };
-
-  const updateQuantity = (itemId: string, quantity: number) => {
-    const item = cart.find(cartItem => cartItem.id === itemId);
-    if (!item) return;
-
-    if (quantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-
-    if (quantity > item.stock) {
+  const addToCart = (item: MenuItemWithCategory) => {
+    // Verificar se há estoque disponível
+    if (item.stock <= 0) {
       toast({
-        title: 'Estoque insuficiente',
-        description: `Apenas ${item.stock} unidades disponíveis`,
-        variant: 'destructive',
+        title: "Estoque insuficiente",
+        description: `${item.name} está fora de estoque.`,
+        variant: "destructive"
       });
       return;
     }
 
-    setCart(cart.map(cartItem =>
-      cartItem.id === itemId
-        ? { ...cartItem, quantity }
-        : cartItem
-    ));
+    const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
+    if (existingItem) {
+      if (existingItem.quantity >= item.stock) {
+        toast({
+          title: "Estoque insuficiente",
+          description: `Apenas ${item.stock} unidades disponíveis de ${item.name}.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      updateQuantity(item.id, existingItem.quantity + 1);
+    } else {
+      const newCartItem: CartItem = {
+        menuItem: {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          stock: item.stock,
+          category: item.category?.name || '',
+          description: item.description || '',
+          subItems: [] // Não usando subItems mais
+        },
+        quantity: 1,
+        subtotal: item.price
+      };
+      setCartItems([...cartItems, newCartItem]);
+    }
   };
 
-  const getTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const updateQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
+    } else {
+      const menuItem = menuItems.find(item => item.id === itemId);
+      if (menuItem && newQuantity > menuItem.stock) {
+        toast({
+          title: "Estoque insuficiente",
+          description: `Apenas ${menuItem.stock} unidades disponíveis.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setCartItems(cartItems.map(item => item.menuItem.id === itemId ? {
+        ...item,
+        quantity: newQuantity,
+        subtotal: item.menuItem.price * newQuantity
+      } : item));
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (cart.length === 0) {
+  const processSale = async () => {
+    if (cartItems.length === 0) {
       toast({
-        title: 'Carrinho vazio',
-        description: 'Adicione itens ao carrinho antes de finalizar',
-        variant: 'destructive',
+        title: "Carrinho vazio",
+        description: "Adicione itens ao carrinho antes de processar a venda.",
+        variant: "destructive"
       });
       return;
     }
 
     try {
       const saleData = {
-        total: getTotal(),
-        items: cart.map(item => ({
-          menu_item_id: item.id,
+        total: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
+        items: cartItems.map(item => ({
+          menu_item_id: item.menuItem.id,
           quantity: item.quantity,
-          unit_price: item.price,
-          subtotal: item.price * item.quantity,
-        })),
+          unit_price: item.menuItem.price,
+          subtotal: item.subtotal
+        }))
       };
 
       await createSale.mutateAsync(saleData);
 
-      toast({
-        title: 'Venda registrada com sucesso!',
-        description: `Total: R$ ${getTotal().toFixed(2)}`,
-      });
+      // Limpar carrinho e mostrar sucesso
+      setCartItems([]);
+      setIsCartOpen(false);
+      setShowSuccessScreen(true);
 
-      // Limpar formulário
-      setCart([]);
-      setCustomerName('');
-      onSuccess?.();
-    } catch (error) {
-      console.error('Erro ao registrar venda:', error);
+    } catch (error: any) {
       toast({
-        title: 'Erro ao registrar venda',
-        description: 'Tente novamente',
-        variant: 'destructive',
+        title: "Erro ao processar venda",
+        description: error.message,
+        variant: "destructive"
       });
     }
   };
 
-  if (isLoadingItems) {
-    return <div>Carregando itens...</div>;
+  const getCartItem = (itemId: string) => {
+    return cartItems.find(item => item.menuItem.id === itemId);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando cardápio...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Registrar Venda</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="customer">Nome do Cliente (Opcional)</Label>
-            <Input
-              id="customer"
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Nome do cliente"
+    <div className="min-h-screen bg-gray-50">
+      {/* Header fixo com logo */}
+      <div className="sticky top-0 z-40 bg-white shadow-sm border-b">
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+              <img 
+                src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
+                alt="Hillsong Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
+              <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/auth')}
+              className="ml-auto"
+            >
+              Admin
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Tabs */}
+      <CategoryTabs 
+        activeCategory={activeCategory} 
+        onCategoryChange={setActiveCategory}
+        categories={categories}
+      />
+
+      {/* Lista de produtos */}
+      <div className="px-4 py-4 pb-24">
+        <div className="max-w-md mx-auto">
+          {filteredMenuItems.map(item => (
+            <MenuCard 
+              key={item.id} 
+              item={{
+                id: item.id,
+                name: item.name,
+                description: item.description || '',
+                price: item.price,
+                stock: item.stock,
+                category: item.category?.name || '',
+                subItems: [] // Não usando subItems mais
+              }}
+              cartItem={getCartItem(item.id)} 
+              onAddToCart={() => addToCart(item)} 
+              onUpdateQuantity={updateQuantity} 
+            />
+          ))}
+        </div>
+      </div>
+
+      <CartSidebar 
+        cartItems={cartItems} 
+        onUpdateQuantity={updateQuantity} 
+        onProcessSale={processSale} 
+        isOpen={isCartOpen} 
+        onOpenChange={setIsCartOpen} 
+      />
+
+      {/* Rodapé com logo */}
+      <footer className="bg-white border-t border-gray-200 mt-8 py-6">
+        <div className="max-w-md mx-auto px-4">
+          <div className="flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/397f96e7-0d6d-4eb1-a7f9-2d0c8fff89fd.png" 
+              alt="Hillsong São Paulo" 
+              className="h-8 opacity-60"
             />
           </div>
+        </div>
+      </footer>
 
-          <div>
-            <Label>Itens Disponíveis</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-              {menuItems?.map((item) => (
-                <Button
-                  key={item.id}
-                  type="button"
-                  variant="outline"
-                  className="p-2 text-left"
-                  onClick={() => addToCart(item)}
-                  disabled={item.stock <= 0}
-                >
-                  <div className="flex justify-between items-center w-full">
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-gray-500">
-                        R$ {item.price.toFixed(2)} | Estoque: {item.stock}
-                      </div>
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {cart.length > 0 && (
-            <div>
-              <Label>Carrinho</Label>
-              <div className="space-y-2 mt-2">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex-1">
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-gray-500">
-                        R$ {item.price.toFixed(2)} x {item.quantity} = R$ {(item.price * item.quantity).toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      >
-                        -
-                      </Button>
-                      <span>{item.quantity}</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      >
-                        +
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeFromCart(item.id)}
-                      >
-                        Remover
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 text-xl font-bold">
-                Total: R$ {getTotal().toFixed(2)}
-              </div>
-            </div>
-          )}
-
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={cart.length === 0 || createSale.isPending}
-          >
-            {createSale.isPending ? 'Registrando...' : 'Registrar Venda'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <SuccessScreen 
+        isVisible={showSuccessScreen} 
+        onClose={() => setShowSuccessScreen(false)} 
+      />
+    </div>
   );
 };
 
