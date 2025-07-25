@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Package, DollarSign, ShoppingCart, TrendingUp, CalendarIcon } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Package, DollarSign, ShoppingCart, TrendingUp, CalendarIcon, Clock } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -16,6 +18,7 @@ const Dashboard: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [hourRange, setHourRange] = useState<{ from: number; to: number }>({ from: 0, to: 23 });
 
   const totalItems = menuItems.length;
   const totalStock = menuItems.reduce((sum, item) => sum + item.stock, 0);
@@ -43,8 +46,15 @@ const Dashboard: React.FC = () => {
       hourlyData[hour].total += sale.total;
     });
 
-    return hourlyData;
-  }, [filteredSales]);
+    // Filtrar por range de horas
+    return hourlyData.filter(data => data.hour >= hourRange.from && data.hour <= hourRange.to);
+  }, [filteredSales, hourRange]);
+
+  // Gerar opções de horas para o select
+  const hourOptions = Array.from({ length: 24 }, (_, i) => ({
+    value: i,
+    label: `${i.toString().padStart(2, '0')}:00`
+  }));
 
   return (
     <>
@@ -107,29 +117,63 @@ const Dashboard: React.FC = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Vendas por Hora (R$)</CardTitle>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex items-center gap-4">
+                {/* Filtro de Range de Horas */}
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Das</span>
+                  <Select value={hourRange.from.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, from: parseInt(value) }))}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hourOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value.toString()}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">às</span>
+                  <Select value={hourRange.to.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, to: parseInt(value) }))}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hourOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value.toString()}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Filtro de Data */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -140,7 +184,7 @@ const Dashboard: React.FC = () => {
                   <XAxis 
                     dataKey="hourLabel" 
                     tick={{ fontSize: 12 }}
-                    interval={1}
+                    interval={0}
                   />
                   <YAxis 
                     tick={{ fontSize: 12 }}
