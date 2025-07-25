@@ -47,7 +47,7 @@ const Dashboard: React.FC = () => {
   }, [filteredSales]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="w-full max-w-[1280px] mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
       </div>
