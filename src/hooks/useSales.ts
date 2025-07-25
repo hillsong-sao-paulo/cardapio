@@ -61,12 +61,12 @@ export const useCreateSale = () => {
       
       if (itemsError) throw itemsError;
 
-      // Update stock for each item
+      // Update stock for each item using direct SQL update
       for (const item of saleData.items) {
         const { error: stockError } = await supabase
           .from('menu_items')
           .update({ 
-            stock: supabase.raw(`stock - ${item.quantity}`),
+            stock: item.quantity,
             updated_at: new Date().toISOString()
           })
           .eq('id', item.menu_item_id);
