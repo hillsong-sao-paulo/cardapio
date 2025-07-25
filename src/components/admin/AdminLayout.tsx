@@ -138,7 +138,7 @@ const AdminLayout: React.FC = () => {
   return (
     <ProtectedRoute>
       <div className="flex flex-col h-screen bg-gray-50">
-        {/* Header with Tabs */}
+        {/* Top Header Level */}
         <header className="bg-white border-b shadow-sm">
           <div className="flex items-center justify-between px-6 py-4">
             {/* Logo and Title */}
@@ -151,29 +151,15 @@ const AdminLayout: React.FC = () => {
                 />
               </div>
               <div>
-                <h1 className="text-lg font-bold">Admin Panel</h1>
+                <h1 className="text-xl font-bold">Admin Panel</h1>
                 <p className="text-sm text-gray-500">Hillsong Lounge</p>
               </div>
             </div>
 
-            {/* Navigation Tabs - Hidden on mobile */}
-            <div className="hidden md:flex">
-              <Tabs value={getCurrentTabValue()} onValueChange={handleTabChange}>
-                <TabsList className="grid w-full grid-cols-4">
-                  {menuItems.map((item) => (
-                    <TabsTrigger key={item.value} value={item.value} className="gap-2">
-                      <item.icon className="h-4 w-4" />
-                      {item.title}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-
             {/* Action Buttons - Hidden on mobile */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-3">
               <Button
-                variant="ghost"
+                variant="outline"
                 className="gap-2"
                 onClick={() => navigate('/')}
               >
@@ -181,8 +167,8 @@ const AdminLayout: React.FC = () => {
                 Ver Cardápio
               </Button>
               <Button
-                variant="ghost"
-                className="gap-2 text-red-600 hover:text-red-700"
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -203,6 +189,24 @@ const AdminLayout: React.FC = () => {
             </Sheet>
           </div>
         </header>
+
+        {/* Second Level Navigation */}
+        <div className="bg-white border-b">
+          <div className="px-6 py-2">
+            <div className="hidden md:flex">
+              <Tabs value={getCurrentTabValue()} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 bg-gray-50">
+                  {menuItems.map((item) => (
+                    <TabsTrigger key={item.value} value={item.value} className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+        </div>
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
