@@ -1,35 +1,19 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Package, DollarSign, ShoppingCart, TrendingUp, CalendarIcon } from 'lucide-react';
+import { Package, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 const Dashboard: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const totalItems = menuItems.length;
   const totalStock = menuItems.reduce((sum, item) => sum + item.stock, 0);
   const totalSales = sales.length;
   const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
-
-  // Filtrar vendas por data selecionada
-  const salesOnSelectedDate = React.useMemo(() => {
-    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-    return sales.filter(sale => {
-      const saleDate = format(new Date(sale.created_at), 'yyyy-MM-dd');
-      return saleDate === selectedDateStr;
-    });
-  }, [sales, selectedDate]);
 
   // Processar dados para o gráfico de vendas por hora
   const salesByHour = React.useMemo(() => {
@@ -39,19 +23,16 @@ const Dashboard: React.FC = () => {
       total: 0
     }));
 
-    salesOnSelectedDate.forEach(sale => {
+    sales.forEach(sale => {
       const hour = new Date(sale.created_at).getHours();
       hourlyData[hour].total += sale.total;
     });
 
     return hourlyData;
-  }, [salesOnSelectedDate]);
-
-  const dailyRevenue = salesOnSelectedDate.reduce((sum, sale) => sum + sale.total, 0);
-  const dailySales = salesOnSelectedDate.length;
+  }, [sales]);
 
   return (
-    <div className="max-w-[1280px] mx-auto p-6 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
       </div>
@@ -102,33 +83,7 @@ const Dashboard: React.FC = () => {
       {/* Gráfico de Vendas por Hora */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Vendas por Hora (R$)</CardTitle>
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Selecionar data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      setSelectedDate(date);
-                      setIsCalendarOpen(false);
-                    }
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Vendas do dia: {dailySales} • Receita: R$ {dailyRevenue.toFixed(2)}
-          </div>
+          <CardTitle>Vendas por Hora (R$)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
