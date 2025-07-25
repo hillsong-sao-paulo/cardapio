@@ -1,19 +1,34 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Package, DollarSign, ShoppingCart, TrendingUp, CalendarIcon } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const Dashboard: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const totalItems = menuItems.length;
   const totalStock = menuItems.reduce((sum, item) => sum + item.stock, 0);
   const totalSales = sales.length;
   const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+
+  // Filtrar vendas por data selecionada
+  const filteredSales = React.useMemo(() => {
+    return sales.filter(sale => {
+      const saleDate = new Date(sale.created_at);
+      return saleDate.toDateString() === selectedDate.toDateString();
+    });
+  }, [sales, selectedDate]);
 
   // Processar dados para o gráfico de vendas por hora
   const salesByHour = React.useMemo(() => {
@@ -23,13 +38,13 @@ const Dashboard: React.FC = () => {
       total: 0
     }));
 
-    sales.forEach(sale => {
+    filteredSales.forEach(sale => {
       const hour = new Date(sale.created_at).getHours();
       hourlyData[hour].total += sale.total;
     });
 
     return hourlyData;
-  }, [sales]);
+  }, [filteredSales]);
 
   return (
     <div className="p-6 space-y-6">
@@ -83,7 +98,32 @@ const Dashboard: React.FC = () => {
       {/* Gráfico de Vendas por Hora */}
       <Card>
         <CardHeader>
-          <CardTitle>Vendas por Hora (R$)</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Vendas por Hora (R$)</CardTitle>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-80">
