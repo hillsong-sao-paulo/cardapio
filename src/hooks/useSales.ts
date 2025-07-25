@@ -80,7 +80,7 @@ export const useSales = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
-      queryClient.invalidateQueries({ queryKey: ['menu-items'] });
+      queryClient.invalidateQueries({ queryKey: ['menu_items'] });
     },
   });
 

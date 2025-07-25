@@ -10,7 +10,7 @@ import { useSales } from '@/hooks/useSales';
 import { MenuItem } from '@/types/database';
 
 interface SalesFormProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 interface CartItem {
@@ -25,7 +25,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ onSuccess }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const { toast } = useToast();
-  const { menuItems, isLoading: isLoadingItems } = useMenuItems();
+  const { data: menuItems, isLoading: isLoadingItems } = useMenuItems();
   const { createSale } = useSales();
 
   const addToCart = (item: MenuItem) => {
@@ -132,7 +132,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ onSuccess }) => {
       // Limpar formulário
       setCart([]);
       setCustomerName('');
-      onSuccess();
+      onSuccess?.();
     } catch (error) {
       console.error('Erro ao registrar venda:', error);
       toast({

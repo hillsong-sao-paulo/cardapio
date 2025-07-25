@@ -14,10 +14,22 @@ const Sales: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
-  const { data: sales = [], isLoading } = useSales(startDate, endDate);
+  const { sales = [], isLoading } = useSales();
 
-  const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalItems = sales.reduce((sum, sale) => sum + (sale.sale_items?.length || 0), 0);
+  // Filtrar vendas localmente baseado nas datas
+  const filteredSales = sales.filter(sale => {
+    const saleDate = new Date(sale.created_at);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    
+    if (start && saleDate < start) return false;
+    if (end && saleDate > end) return false;
+    
+    return true;
+  });
+
+  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalItems = filteredSales.reduce((sum, sale) => sum + (sale.sale_items?.length || 0), 0);
 
   const clearFilters = () => {
     setStartDate('');
@@ -95,7 +107,7 @@ const Sales: React.FC = () => {
             <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{sales.length}</div>
+            <div className="text-2xl font-bold">{filteredSales.length}</div>
           </CardContent>
         </Card>
 
@@ -124,13 +136,13 @@ const Sales: React.FC = () => {
           <CardTitle>Histórico de Vendas</CardTitle>
         </CardHeader>
         <CardContent>
-          {sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               Nenhuma venda encontrada para o período selecionado.
             </div>
           ) : (
             <div className="space-y-4">
-              {sales.map((sale) => (
+              {filteredSales.map((sale) => (
                 <div key={sale.id} className="border rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -160,7 +172,7 @@ const Sales: React.FC = () => {
                         {sale.sale_items.map((item) => (
                           <div key={item.id} className="flex justify-between items-center text-sm">
                             <span>
-                              {item.quantity}x {item.menu_item?.name || 'Item não encontrado'}
+                              {item.quantity}x {item.menu_items?.name || 'Item não encontrado'}
                             </span>
                             <span>R$ {item.subtotal.toFixed(2)}</span>
                           </div>

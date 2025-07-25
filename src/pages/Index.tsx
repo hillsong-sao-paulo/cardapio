@@ -2,7 +2,7 @@
 import SalesForm from '@/components/SalesForm';
 
 const Index = () => {
-  return <SalesForm />;
+  return <SalesForm onSuccess={() => {}} />;
 };
 
 export default Index;
