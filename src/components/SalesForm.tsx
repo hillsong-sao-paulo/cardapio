@@ -191,14 +191,6 @@ const SalesForm: React.FC = () => {
               <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
               <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/auth')}
-              className="ml-auto"
-            >
-              Admin
-            </Button>
           </div>
         </div>
       </div>
