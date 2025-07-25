@@ -1,31 +1,22 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Sale, SaleItem, SaleWithItems } from '@/types/database';
+import { Sale, SaleWithItems, SaleItem, MenuItem } from '@/types/database';
 
-export const useSales = (startDate?: string, endDate?: string) => {
+export const useSales = () => {
   return useQuery({
-    queryKey: ['sales', startDate, endDate],
+    queryKey: ['sales'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('sales')
         .select(`
           *,
-          sale_items(
+          sale_items (
             *,
-            menu_item:menu_items(*)
+            menu_item:menu_items (*)
           )
         `)
         .order('created_at', { ascending: false });
-
-      if (startDate) {
-        query = query.gte('created_at', startDate);
-      }
-      if (endDate) {
-        query = query.lte('created_at', endDate);
-      }
-
-      const { data, error } = await query;
       
       if (error) throw error;
       return data as SaleWithItems[];
@@ -37,20 +28,31 @@ export const useCreateSale = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (sale: { total: number; items: Omit<SaleItem, 'id' | 'sale_id' | 'created_at'>[] }) => {
-      // Criar a venda
-      const { data: saleData, error: saleError } = await supabase
+    mutationFn: async (saleData: {
+      total: number;
+      items: Array<{
+        menu_item_id: string;
+        quantity: number;
+        unit_price: number;
+        subtotal: number;
+      }>;
+    }) => {
+      // Create the sale
+      const { data: sale, error: saleError } = await supabase
         .from('sales')
-        .insert([{ total: sale.total }])
+        .insert([{ total: saleData.total }])
         .select()
         .single();
       
       if (saleError) throw saleError;
 
-      // Criar os itens da venda
-      const saleItems = sale.items.map(item => ({
-        ...item,
-        sale_id: saleData.id
+      // Create sale items
+      const saleItems = saleData.items.map(item => ({
+        sale_id: sale.id,
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal,
       }));
 
       const { error: itemsError } = await supabase
@@ -59,35 +61,42 @@ export const useCreateSale = () => {
       
       if (itemsError) throw itemsError;
 
-      // Atualizar estoque dos itens
-      for (const item of sale.items) {
-        const { error: stockError } = await supabase.rpc('update_stock', {
-          item_id: item.menu_item_id,
-          quantity_sold: item.quantity
-        });
+      // Update stock for each item
+      for (const item of saleData.items) {
+        const { error: stockError } = await supabase
+          .from('menu_items')
+          .update({ 
+            stock: supabase.raw(`stock - ${item.quantity}`),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.menu_item_id);
         
-        if (stockError) {
-          // Fallback: atualizar manualmente
-          const { data: currentItem } = await supabase
-            .from('menu_items')
-            .select('stock')
-            .eq('id', item.menu_item_id)
-            .single();
-          
-          if (currentItem) {
-            await supabase
-              .from('menu_items')
-              .update({ stock: currentItem.stock - item.quantity })
-              .eq('id', item.menu_item_id);
-          }
-        }
+        if (stockError) throw stockError;
       }
 
-      return saleData;
+      return sale;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       queryClient.invalidateQueries({ queryKey: ['menu_items'] });
+    },
+  });
+};
+
+export const useDeleteSale = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
     },
   });
 };
