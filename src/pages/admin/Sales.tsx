@@ -5,17 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Download, Eye } from 'lucide-react';
-import { useSales } from '@/hooks/useSales';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { CalendarIcon, Download, Eye, Trash2 } from 'lucide-react';
+import { useSales, useDeleteSale } from '@/hooks/useSales';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SEO from '@/components/SEO';
 import { DateRange } from 'react-day-picker';
+import { useToast } from '@/hooks/use-toast';
+import { SaleWithItems } from '@/types/database';
 
 const Sales: React.FC = () => {
   const { data: sales = [] } = useSales();
+  const deleteSaleMutation = useDeleteSale();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [selectedSale, setSelectedSale] = useState<SaleWithItems | null>(null);
+  const [isSaleDetailOpen, setIsSaleDetailOpen] = useState(false);
+  const { toast } = useToast();
 
   const filteredSales = React.useMemo(() => {
     if (!dateRange?.from && !dateRange?.to) return sales;
@@ -40,6 +48,27 @@ const Sales: React.FC = () => {
   }, [sales, dateRange]);
 
   const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+
+  const handleDeleteSale = async (saleId: string) => {
+    try {
+      await deleteSaleMutation.mutateAsync(saleId);
+      toast({
+        title: "Venda excluída",
+        description: "A venda foi excluída com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir venda",
+        description: "Ocorreu um erro ao excluir a venda.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleViewSale = (sale: SaleWithItems) => {
+    setSelectedSale(sale);
+    setIsSaleDetailOpen(true);
+  };
 
   const exportToCSV = () => {
     const csvData = filteredSales.map(sale => ({
@@ -165,9 +194,39 @@ const Sales: React.FC = () => {
                     <div className="text-right">
                       <p className="font-bold text-green-600">R$ {sale.total.toFixed(2)}</p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewSale(sale)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Venda</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteSale(sale.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -180,6 +239,52 @@ const Sales: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Sale Detail Dialog */}
+        <Dialog open={isSaleDetailOpen} onOpenChange={setIsSaleDetailOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalhes da Venda #{selectedSale?.id.slice(-8)}</DialogTitle>
+            </DialogHeader>
+            {selectedSale && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Data da Venda</p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(selectedSale.created_at).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Total</p>
+                    <p className="text-lg font-bold text-green-600">
+                      R$ {selectedSale.total.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-2">Itens da Venda</p>
+                  <div className="space-y-2">
+                    {selectedSale.sale_items?.map((item) => (
+                      <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium">{item.menu_item.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {item.quantity}x R$ {item.unit_price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">R$ {item.subtotal.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
