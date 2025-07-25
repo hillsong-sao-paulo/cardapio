@@ -4,160 +4,189 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
-import { Category } from '@/types/database';
+import SEO from '@/components/SEO';
 
 const Categories: React.FC = () => {
-  const { data: categories = [], isLoading } = useCategories();
-  const createCategory = useCreateCategory();
-  const updateCategory = useUpdateCategory();
-  const deleteCategory = useDeleteCategory();
+  const { data: categories = [], createCategory, updateCategory, deleteCategory } = useCategories();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const { toast } = useToast();
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState({ name: '' });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (editingCategory) {
-        await updateCategory.mutateAsync({
-          id: editingCategory.id,
-          name: formData.name
-        });
-        toast({
-          title: "Categoria atualizada com sucesso!",
-        });
-      } else {
-        await createCategory.mutateAsync({ name: formData.name });
-        toast({
-          title: "Categoria criada com sucesso!",
-        });
-      }
-      
-      setShowForm(false);
-      setEditingCategory(null);
-      setFormData({ name: '' });
-    } catch (error: any) {
+  const handleCreate = async () => {
+    if (!name.trim()) {
       toast({
         title: "Erro",
+        description: "Nome da categoria é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { error } = await createCategory.mutateAsync({
+      name: name.trim(),
+      description: description.trim()
+    });
+
+    if (error) {
+      toast({
+        title: "Erro ao criar categoria",
         description: error.message,
         variant: "destructive"
       });
+    } else {
+      toast({
+        title: "Categoria criada",
+        description: "Categoria criada com sucesso"
+      });
+      setIsCreateOpen(false);
+      setName('');
+      setDescription('');
     }
   };
 
-  const handleEdit = (category: Category) => {
-    setEditingCategory(category);
-    setFormData({ name: category.name });
-    setShowForm(true);
+  const handleEdit = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome da categoria é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { error } = await updateCategory.mutateAsync({
+      id: editingCategory.id,
+      name: name.trim(),
+      description: description.trim()
+    });
+
+    if (error) {
+      toast({
+        title: "Erro ao atualizar categoria",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Categoria atualizada",
+        description: "Categoria atualizada com sucesso"
+      });
+      setIsEditOpen(false);
+      setEditingCategory(null);
+      setName('');
+      setDescription('');
+    }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-      try {
-        await deleteCategory.mutateAsync(id);
+    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
+      const { error } = await deleteCategory.mutateAsync(id);
+      
+      if (error) {
         toast({
-          title: "Categoria excluída com sucesso!",
-        });
-      } catch (error: any) {
-        toast({
-          title: "Erro",
+          title: "Erro ao excluir categoria",
           description: error.message,
           variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Categoria excluída",
+          description: "Categoria excluída com sucesso"
         });
       }
     }
   };
 
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingCategory(null);
-    setFormData({ name: '' });
+  const openEditDialog = (category: any) => {
+    setEditingCategory(category);
+    setName(category.name);
+    setDescription(category.description || '');
+    setIsEditOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">Carregando categorias...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Gerenciar Categorias</h1>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Categoria
-        </Button>
-      </div>
-
-      {/* Formulário */}
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome da Categoria</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ name: e.target.value })}
-                  placeholder="Digite o nome da categoria"
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  type="submit" 
-                  disabled={createCategory.isPending || updateCategory.isPending}
-                >
-                  {editingCategory ? 'Atualizar' : 'Criar'}
-                </Button>
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Lista de Categorias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <Card key={category.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+    <>
+      <SEO 
+        title="Categorias - Admin"
+        description="Gerenciar categorias do cardápio no painel administrativo do Hillsong Lounge - Encounterfest 2025."
+        noindex={true}
+      />
+      
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Categorias</h1>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nova Categoria
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Nova Categoria</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-lg">{category.name}</h3>
-                  <Badge variant="secondary" className="mt-2">
-                    {category.id.slice(-8)}
-                  </Badge>
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nome da categoria"
+                  />
                 </div>
+                <div>
+                  <Label htmlFor="description">Descrição</Label>
+                  <Input
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Descrição da categoria"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreate} disabled={createCategory.isPending}>
+                    {createCategory.isPending ? 'Criando...' : 'Criar'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {categories.map((category) => (
+            <Card key={category.id}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">{category.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  {category.description || 'Sem descrição'}
+                </p>
                 <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
+                  <Button 
+                    variant="outline" 
                     size="sm"
-                    onClick={() => handleEdit(category)}
+                    onClick={() => openEditDialog(category)}
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
+                  <Button 
+                    variant="outline" 
                     size="sm"
                     onClick={() => handleDelete(category.id)}
                     className="text-red-600 hover:text-red-700"
@@ -165,24 +194,49 @@ const Categories: React.FC = () => {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-      {categories.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-gray-500">Nenhuma categoria encontrada.</p>
-            <Button onClick={() => setShowForm(true)} className="mt-4 gap-2">
-              <Plus className="h-4 w-4" />
-              Criar primeira categoria
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        {/* Edit Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Categoria</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Nome *</Label>
+                <Input
+                  id="edit-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nome da categoria"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Descrição</Label>
+                <Input
+                  id="edit-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Descrição da categoria"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleEdit} disabled={updateCategory.isPending}>
+                  {updateCategory.isPending ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 };
 

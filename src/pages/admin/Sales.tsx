@@ -2,193 +2,191 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Download, Filter } from 'lucide-react';
+import { CalendarIcon, Download, Eye } from 'lucide-react';
 import { useSales } from '@/hooks/useSales';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import SEO from '@/components/SEO';
 
 const Sales: React.FC = () => {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const { data: sales = [], isLoading } = useSales();
-
-  // Filter sales by date range if dates are provided
-  const filteredSales = sales.filter(sale => {
-    if (!startDate && !endDate) return true;
-    
-    const saleDate = new Date(sale.created_at);
-    const start = startDate ? new Date(startDate) : null;
-    const end = endDate ? new Date(endDate) : null;
-    
-    if (start && saleDate < start) return false;
-    if (end && saleDate > end) return false;
-    
-    return true;
+  const { data: sales = [] } = useSales();
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined
   });
 
-  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalItems = filteredSales.reduce((sum, sale) => sum + (sale.sale_items?.length || 0), 0);
+  const filteredSales = React.useMemo(() => {
+    if (!dateRange.from && !dateRange.to) return sales;
+    
+    return sales.filter(sale => {
+      const saleDate = new Date(sale.created_at);
+      
+      if (dateRange.from && dateRange.to) {
+        return saleDate >= dateRange.from && saleDate <= dateRange.to;
+      }
+      
+      if (dateRange.from) {
+        return saleDate >= dateRange.from;
+      }
+      
+      if (dateRange.to) {
+        return saleDate <= dateRange.to;
+      }
+      
+      return true;
+    });
+  }, [sales, dateRange]);
 
-  const clearFilters = () => {
-    setStartDate('');
-    setEndDate('');
+  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+
+  const exportToCSV = () => {
+    const csvData = filteredSales.map(sale => ({
+      id: sale.id,
+      data: new Date(sale.created_at).toLocaleString('pt-BR'),
+      total: sale.total,
+      itens: sale.sale_items?.length || 0
+    }));
+
+    const csvContent = [
+      ['ID', 'Data', 'Total', 'Itens'],
+      ...csvData.map(row => [row.id, row.data, row.total, row.itens])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vendas_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">Carregando vendas...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Relatório de Vendas</h1>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
-          >
-            <Filter className="h-4 w-4" />
-            Filtros
-          </Button>
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Exportar
-          </Button>
+    <>
+      <SEO 
+        title="Vendas - Admin"
+        description="Visualizar e gerenciar vendas no painel administrativo do Hillsong Lounge - Encounterfest 2025."
+        noindex={true}
+      />
+      
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Vendas</h1>
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <CalendarIcon className="h-4 w-4" />
+                  {dateRange.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd/MM/yyyy")
+                    )
+                  ) : (
+                    <span>Filtrar por data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" onClick={exportToCSV} className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Filtros */}
-      {showFilters && (
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{filteredSales.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                R$ {totalRevenue.toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                R$ {filteredSales.length > 0 ? (totalRevenue / filteredSales.length).toFixed(2) : '0.00'}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sales List */}
         <Card>
           <CardHeader>
-            <CardTitle>Filtros</CardTitle>
+            <CardTitle>Histórico de Vendas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-date">Data Inicial</Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-date">Data Final</Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+            <div className="space-y-4">
+              {filteredSales.map((sale) => (
+                <div key={sale.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="font-medium">Venda #{sale.id.slice(-8)}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(sale.created_at).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">
+                      {sale.sale_items?.length || 0} itens
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">R$ {sale.total.toFixed(2)}</p>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              {filteredSales.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhuma venda encontrada para o período selecionado.
+                </div>
+              )}
             </div>
-            <div className="flex gap-2 mt-4">
-              <Button variant="outline" onClick={clearFilters}>
-                Limpar Filtros
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredSales.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Itens Vendidos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalItems}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">R$ {totalRevenue.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Lista de Vendas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Vendas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredSales.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              Nenhuma venda encontrada para o período selecionado.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredSales.map((sale) => (
-                <div key={sale.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">Venda #{sale.id.slice(-8)}</h3>
-                        <Badge variant="secondary">
-                          <CalendarDays className="h-3 w-3 mr-1" />
-                          {format(new Date(sale.created_at), 'dd/MM/yyyy HH:mm')}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-green-600">
-                        R$ {sale.total.toFixed(2)}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {sale.sale_items?.length || 0} itens
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Itens da Venda */}
-                  {sale.sale_items && sale.sale_items.length > 0 && (
-                    <div className="mt-3 pt-3 border-t">
-                      <h4 className="font-medium mb-2">Itens vendidos:</h4>
-                      <div className="space-y-1">
-                        {sale.sale_items.map((item) => (
-                          <div key={item.id} className="flex justify-between items-center text-sm">
-                            <span>
-                              {item.quantity}x {item.menu_item?.name || 'Item não encontrado'}
-                            </span>
-                            <span>R$ {item.subtotal.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    </>
   );
 };
 
