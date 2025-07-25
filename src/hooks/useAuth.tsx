@@ -1,46 +1,44 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+
+interface AdminSession {
+  email: string;
+  loginTime: string;
+}
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AdminSession | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Configurar listener de mudanças de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Verificar se existe sessão admin no localStorage
+    const adminSession = localStorage.getItem('admin_session');
+    
+    if (adminSession) {
+      try {
+        const sessionData = JSON.parse(adminSession);
+        setUser(sessionData);
+      } catch (error) {
+        console.error('Erro ao parsear sessão admin:', error);
+        localStorage.removeItem('admin_session');
       }
-    );
-
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
+    
+    setLoading(false);
   }, []);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      navigate('/auth');
-    }
-    return { error };
+    localStorage.removeItem('admin_session');
+    setUser(null);
+    navigate('/auth');
+    return { error: null };
   };
 
   return {
     user,
-    session,
+    session: user ? { user } : null,
     loading,
     signOut
   };
