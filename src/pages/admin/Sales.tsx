@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Download, Filter } from 'lucide-react';
 import { useSales } from '@/hooks/useSales';
-import { useRealtimeStock } from '@/hooks/useRealtimeStock';
 import { format } from 'date-fns';
 
 const Sales: React.FC = () => {
@@ -16,9 +15,6 @@ const Sales: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   
   const { data: sales = [], isLoading } = useSales();
-  
-  // Configurar realtime updates
-  useRealtimeStock();
 
   // Filter sales by date range if dates are provided
   const filteredSales = sales.filter(sale => {
@@ -44,14 +40,14 @@ const Sales: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-[1280px] mx-auto p-6">
+      <div className="p-6">
         <div className="text-center">Carregando vendas...</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto p-6 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Relatório de Vendas</h1>
         <div className="flex gap-2">
