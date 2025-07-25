@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Trash2, X, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Package, PackagePlus } from 'lucide-react';
 import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from '@/hooks/useMenuItems';
 import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
 import { MenuItem } from '@/types/database';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const MenuItems: React.FC = () => {
   const { data: menuItems = [], isLoading } = useMenuItems();
@@ -22,7 +23,9 @@ const MenuItems: React.FC = () => {
   const { toast } = useToast();
 
   const [showForm, setShowForm] = useState(false);
+  const [showBulkStockModal, setShowBulkStockModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [bulkStockAmount, setBulkStockAmount] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -136,6 +139,45 @@ const MenuItems: React.FC = () => {
     }
   };
 
+  const handleBulkStockUpdate = async () => {
+    if (!bulkStockAmount || parseInt(bulkStockAmount) <= 0) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira uma quantidade válida",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const stockToAdd = parseInt(bulkStockAmount);
+      
+      // Atualizar estoque de todos os itens
+      await Promise.all(
+        menuItems.map(item => 
+          updateMenuItem.mutateAsync({
+            id: item.id,
+            stock: item.stock + stockToAdd
+          })
+        )
+      );
+
+      toast({
+        title: "Estoque atualizado em massa!",
+        description: `Adicionados ${stockToAdd} unidades a todos os itens`,
+      });
+      
+      setShowBulkStockModal(false);
+      setBulkStockAmount('');
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -148,10 +190,58 @@ const MenuItems: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gerenciar Cardápio</h1>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Item
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={showBulkStockModal} onOpenChange={setShowBulkStockModal}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <PackagePlus className="h-4 w-4" />
+                Adicionar Estoque em Massa
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Estoque em Massa</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bulk-stock">Quantidade a adicionar</Label>
+                  <Input
+                    id="bulk-stock"
+                    type="number"
+                    min="1"
+                    value={bulkStockAmount}
+                    onChange={(e) => setBulkStockAmount(e.target.value)}
+                    placeholder="Digite a quantidade"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Esta quantidade será adicionada ao estoque atual de todos os itens.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleBulkStockUpdate}
+                    disabled={updateMenuItem.isPending}
+                  >
+                    Adicionar Estoque
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowBulkStockModal(false);
+                      setBulkStockAmount('');
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Item
+          </Button>
+        </div>
       </div>
 
       {/* Formulário */}
