@@ -8,13 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { useMenuItems } from '@/hooks/useMenuItems';
+import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from '@/hooks/useMenuItems';
 import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
 import SEO from '@/components/SEO';
 
 const MenuItems: React.FC = () => {
-  const { data: menuItems = [], createItem, updateItem, deleteItem } = useMenuItems();
+  const { data: menuItems = [] } = useMenuItems();
+  const createItem = useCreateMenuItem();
+  const updateItem = useUpdateMenuItem();
+  const deleteItem = useDeleteMenuItem();
   const { data: categories = [] } = useCategories();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -157,7 +160,7 @@ const MenuItems: React.FC = () => {
         noindex={true}
       />
       
-      <div className="p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Itens do Cardápio</h1>

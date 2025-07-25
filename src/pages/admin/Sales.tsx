@@ -11,19 +11,14 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SEO from '@/components/SEO';
+import { DateRange } from 'react-day-picker';
 
 const Sales: React.FC = () => {
   const { data: sales = [] } = useSales();
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const filteredSales = React.useMemo(() => {
-    if (!dateRange.from && !dateRange.to) return sales;
+    if (!dateRange?.from && !dateRange?.to) return sales;
     
     return sales.filter(sale => {
       const saleDate = new Date(sale.created_at);
@@ -76,7 +71,7 @@ const Sales: React.FC = () => {
         noindex={true}
       />
       
-      <div className="p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Vendas</h1>
@@ -85,7 +80,7 @@ const Sales: React.FC = () => {
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2">
                   <CalendarIcon className="h-4 w-4" />
-                  {dateRange.from ? (
+                  {dateRange?.from ? (
                     dateRange.to ? (
                       <>
                         {format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}
@@ -102,7 +97,7 @@ const Sales: React.FC = () => {
                 <Calendar
                   mode="range"
                   selected={dateRange}
-                  onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
+                  onSelect={setDateRange}
                   initialFocus
                 />
               </PopoverContent>
