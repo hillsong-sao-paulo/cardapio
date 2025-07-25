@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Dashboard: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
@@ -14,7 +15,21 @@ const Dashboard: React.FC = () => {
   const totalSales = sales.length;
   const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
 
-  const lowStockItems = menuItems.filter(item => item.stock <= 5);
+  // Processar dados para o gráfico de vendas por hora
+  const salesByHour = React.useMemo(() => {
+    const hourlyData = Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      hourLabel: `${i.toString().padStart(2, '0')}:00`,
+      total: 0
+    }));
+
+    sales.forEach(sale => {
+      const hour = new Date(sale.created_at).getHours();
+      hourlyData[hour].total += sale.total;
+    });
+
+    return hourlyData;
+  }, [sales]);
 
   return (
     <div className="p-6 space-y-6">
@@ -65,32 +80,39 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Lista de Itens com Estoque Baixo */}
-      {lowStockItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg text-orange-600">
-              Itens com Estoque Baixo (≤ 5 unidades)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {lowStockItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-600">{item.category?.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-orange-600">{item.stock} unidades</p>
-                    <p className="text-sm text-gray-600">R$ {item.price.toFixed(2)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Gráfico de Vendas por Hora */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Vendas por Hora (R$)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesByHour}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="hourLabel" 
+                  tick={{ fontSize: 12 }}
+                  interval={1}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `R$ ${value.toFixed(0)}`}
+                />
+                <Tooltip 
+                  formatter={(value) => [`R$ ${Number(value).toFixed(2)}`, 'Total']}
+                  labelStyle={{ color: '#374151' }}
+                />
+                <Bar 
+                  dataKey="total" 
+                  fill="#3b82f6" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Vendas Recentes */}
       <Card>
