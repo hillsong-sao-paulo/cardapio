@@ -112,7 +112,7 @@ export const useSales = () => {
   };
 
   return {
-    sales,
+    sales: sales || [],
     isLoading,
     createSale,
     getSalesStats,
