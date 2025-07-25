@@ -1,39 +1,92 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
 import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
 import CategoryTabs from './CategoryTabs';
-import { MenuItem, CartItem, SaleRecord, StockItem } from '../types/inventory';
-import { menuItems as initialMenuItems, stockItems as initialStockItems } from '../data/menuData';
+import { CartItem, SaleRecord } from '../types/inventory';
+import { MenuItemWithCategory } from '../types/database';
+import { useMenuItems } from '../hooks/useMenuItems';
+import { useCreateSale } from '../hooks/useSales';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const SalesForm: React.FC = () => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [stockItems, setStockItems] = useState<StockItem[]>(initialStockItems);
+  const { data: menuItems = [], isLoading } = useMenuItems();
+  const createSale = useCreateSale();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Configurar realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('menu-updates')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'menu_items'
+      }, () => {
+        // Invalidar cache quando houver mudanças
+        window.location.reload();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)));
+    return ['Todos', ...cats];
+  }, [menuItems]);
 
   const filteredMenuItems = useMemo(() => {
     if (activeCategory === 'Todos') {
       return menuItems;
     }
-    return menuItems.filter(item => item.category === activeCategory);
+    return menuItems.filter(item => item.category?.name === activeCategory);
   }, [menuItems, activeCategory]);
 
-  const addToCart = (item: MenuItem) => {
+  const addToCart = (item: MenuItemWithCategory) => {
+    // Verificar se há estoque disponível
+    if (item.stock <= 0) {
+      toast({
+        title: "Estoque insuficiente",
+        description: `${item.name} está fora de estoque.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
     if (existingItem) {
+      if (existingItem.quantity >= item.stock) {
+        toast({
+          title: "Estoque insuficiente",
+          description: `Apenas ${item.stock} unidades disponíveis de ${item.name}.`,
+          variant: "destructive"
+        });
+        return;
+      }
       updateQuantity(item.id, existingItem.quantity + 1);
     } else {
       const newCartItem: CartItem = {
-        menuItem: item,
+        menuItem: {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          stock: item.stock,
+          category: item.category?.name || '',
+          description: item.description || '',
+          subItems: [] // Não usando subItems mais
+        },
         quantity: 1,
         subtotal: item.price
       };
@@ -45,6 +98,16 @@ const SalesForm: React.FC = () => {
     if (newQuantity <= 0) {
       setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
     } else {
+      const menuItem = menuItems.find(item => item.id === itemId);
+      if (menuItem && newQuantity > menuItem.stock) {
+        toast({
+          title: "Estoque insuficiente",
+          description: `Apenas ${menuItem.stock} unidades disponíveis.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       setCartItems(cartItems.map(item => item.menuItem.id === itemId ? {
         ...item,
         quantity: newQuantity,
@@ -53,21 +116,7 @@ const SalesForm: React.FC = () => {
     }
   };
 
-  const updateStock = (itemId: string, quantityUsed: number) => {
-    setStockItems(currentStock => currentStock.map(stockItem => stockItem.id === itemId ? {
-      ...stockItem,
-      currentStock: stockItem.currentStock - quantityUsed
-    } : stockItem));
-  };
-
-  const updateMenuItemStock = (itemId: string, quantityUsed: number) => {
-    setMenuItems(currentMenu => currentMenu.map(menuItem => menuItem.id === itemId ? {
-      ...menuItem,
-      stock: menuItem.stock - quantityUsed
-    } : menuItem));
-  };
-
-  const processSale = () => {
+  const processSale = async () => {
     if (cartItems.length === 0) {
       toast({
         title: "Carrinho vazio",
@@ -77,52 +126,47 @@ const SalesForm: React.FC = () => {
       return;
     }
 
-    // Verificar se há estoque suficiente
-    for (const cartItem of cartItems) {
-      if (cartItem.quantity > cartItem.menuItem.stock) {
-        toast({
-          title: "Estoque insuficiente",
-          description: `Não há estoque suficiente para ${cartItem.menuItem.name}.`,
-          variant: "destructive"
-        });
-        return;
-      }
+    try {
+      const saleData = {
+        total: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
+        items: cartItems.map(item => ({
+          menu_item_id: item.menuItem.id,
+          quantity: item.quantity,
+          unit_price: item.menuItem.price,
+          subtotal: item.subtotal
+        }))
+      };
+
+      await createSale.mutateAsync(saleData);
+
+      // Limpar carrinho e mostrar sucesso
+      setCartItems([]);
+      setIsCartOpen(false);
+      setShowSuccessScreen(true);
+
+    } catch (error: any) {
+      toast({
+        title: "Erro ao processar venda",
+        description: error.message,
+        variant: "destructive"
+      });
     }
-
-    // Processar a venda
-    const saleRecord: SaleRecord = {
-      id: Date.now().toString(),
-      items: [...cartItems],
-      total: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
-      timestamp: new Date()
-    };
-
-    // Atualizar estoque dos itens do menu
-    cartItems.forEach(cartItem => {
-      updateMenuItemStock(cartItem.menuItem.id, cartItem.quantity);
-
-      // Atualizar estoque dos sub-itens
-      if (cartItem.menuItem.subItems) {
-        cartItem.menuItem.subItems.forEach(subItem => {
-          updateStock(subItem.id, subItem.quantityUsed * cartItem.quantity);
-        });
-      }
-    });
-
-    // Adicionar ao histórico
-    setSalesHistory([saleRecord, ...salesHistory]);
-
-    // Limpar carrinho
-    setCartItems([]);
-    setIsCartOpen(false);
-
-    // Mostrar tela de sucesso ao invés do toast
-    setShowSuccessScreen(true);
   };
 
   const getCartItem = (itemId: string) => {
     return cartItems.find(item => item.menuItem.id === itemId);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando cardápio...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -141,6 +185,14 @@ const SalesForm: React.FC = () => {
               <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
               <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/auth')}
+              className="ml-auto"
+            >
+              Admin
+            </Button>
           </div>
         </div>
       </div>
@@ -148,7 +200,8 @@ const SalesForm: React.FC = () => {
       {/* Category Tabs */}
       <CategoryTabs 
         activeCategory={activeCategory} 
-        onCategoryChange={setActiveCategory} 
+        onCategoryChange={setActiveCategory}
+        categories={categories}
       />
 
       {/* Lista de produtos */}
@@ -157,9 +210,17 @@ const SalesForm: React.FC = () => {
           {filteredMenuItems.map(item => (
             <MenuCard 
               key={item.id} 
-              item={item} 
+              item={{
+                id: item.id,
+                name: item.name,
+                description: item.description || '',
+                price: item.price,
+                stock: item.stock,
+                category: item.category?.name || '',
+                subItems: [] // Não usando subItems mais
+              }}
               cartItem={getCartItem(item.id)} 
-              onAddToCart={addToCart} 
+              onAddToCart={() => addToCart(item)} 
               onUpdateQuantity={updateQuantity} 
             />
           ))}
@@ -173,36 +234,6 @@ const SalesForm: React.FC = () => {
         isOpen={isCartOpen} 
         onOpenChange={setIsCartOpen} 
       />
-
-      {/* Histórico de Vendas - apenas em desktop */}
-      {salesHistory.length > 0 && (
-        <div className="hidden md:block mt-12 max-w-4xl mx-auto px-4">
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 font-sf">
-              Histórico de Vendas
-            </h2>
-            <div className="space-y-3">
-              {salesHistory.slice(0, 5).map(sale => (
-                <div key={sale.id} className="bg-gray-50 rounded-xl p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-semibold text-gray-900 font-sf">
-                        Venda #{sale.id}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-4 font-sf">
-                        {sale.timestamp.toLocaleString('pt-BR')}
-                      </span>
-                    </div>
-                    <span className="text-lg font-bold text-gray-900 font-sf">
-                      R$ {sale.total.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Rodapé com logo */}
       <footer className="bg-white border-t border-gray-200 mt-8 py-6">
