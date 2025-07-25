@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Menu, 
   LayoutDashboard, 
@@ -38,24 +39,40 @@ const AdminLayout: React.FC = () => {
     {
       title: 'Dashboard',
       icon: LayoutDashboard,
-      path: '/admin'
+      path: '/admin',
+      value: 'dashboard'
     },
     {
       title: 'Categorias',
       icon: Tags,
-      path: '/admin/categories'
+      path: '/admin/categories',
+      value: 'categories'
     },
     {
       title: 'Cardápio',
       icon: Package,
-      path: '/admin/menu'
+      path: '/admin/menu',
+      value: 'menu'
     },
     {
       title: 'Vendas',
       icon: BarChart3,
-      path: '/admin/sales'
+      path: '/admin/sales',
+      value: 'sales'
     }
   ];
+
+  const getCurrentTabValue = () => {
+    const currentItem = menuItems.find(item => item.path === location.pathname);
+    return currentItem ? currentItem.value : 'dashboard';
+  };
+
+  const handleTabChange = (value: string) => {
+    const item = menuItems.find(item => item.value === value);
+    if (item) {
+      navigate(item.path);
+    }
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -120,32 +137,77 @@ const AdminLayout: React.FC = () => {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-50">
-        {/* Desktop Sidebar */}
-        <div className="hidden md:flex md:w-64 md:flex-col">
-          <div className="flex flex-col h-full bg-white border-r shadow-sm">
-            <SidebarContent />
-          </div>
-        </div>
+      <div className="flex flex-col h-screen bg-gray-50">
+        {/* Header with Tabs */}
+        <header className="bg-white border-b shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full overflow-hidden">
+                <img 
+                  src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
+                  alt="Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">Admin Panel</h1>
+                <p className="text-sm text-gray-500">Hillsong Lounge</p>
+              </div>
+            </div>
 
-        {/* Mobile Sidebar */}
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden fixed top-4 left-4 z-50">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <SidebarContent />
-          </SheetContent>
-        </Sheet>
+            {/* Navigation Tabs - Hidden on mobile */}
+            <div className="hidden md:flex">
+              <Tabs value={getCurrentTabValue()} onValueChange={handleTabChange}>
+                <TabsList className="grid w-full grid-cols-4">
+                  {menuItems.map((item) => (
+                    <TabsTrigger key={item.value} value={item.value} className="gap-2">
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {/* Action Buttons - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="gap-2"
+                onClick={() => navigate('/')}
+              >
+                <Home className="h-4 w-4" />
+                Ver Cardápio
+              </Button>
+              <Button
+                variant="ghost"
+                className="gap-2 text-red-600 hover:text-red-700"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-64">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
+          </div>
+        </header>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-auto">
-            <Outlet />
-          </main>
-        </div>
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
       </div>
     </ProtectedRoute>
   );
