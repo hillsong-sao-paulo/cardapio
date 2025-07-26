@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -243,118 +244,133 @@ const Sales: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredSales.map((sale) => (
-                <div key={sale.id} className="bg-gray-50 rounded-lg">
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex items-center justify-between p-4">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <p className="font-medium">Venda #{sale.id.slice(-8)}</p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(sale.created_at).toLocaleString('pt-BR')}
-                        </p>
+              {filteredSales.map((sale) => {
+                const totalQuantity = sale.sale_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                const uniqueItemsCount = sale.sale_items?.length || 0;
+                
+                return (
+                  <div key={sale.id} className="bg-gray-50 rounded-lg">
+                    {/* Desktop Layout */}
+                    <div className="hidden sm:flex items-center justify-between p-4">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium">Venda #{sale.id.slice(-8)}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(sale.created_at).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant="secondary">
+                            {uniqueItemsCount} {uniqueItemsCount === 1 ? 'item' : 'itens'}
+                          </Badge>
+                          <Badge variant="outline">
+                            {totalQuantity} {totalQuantity === 1 ? 'unidade' : 'unidades'}
+                          </Badge>
+                        </div>
                       </div>
-                      <Badge variant="secondary">
-                        {sale.sale_items?.length || 0} itens
-                      </Badge>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">R$ {sale.total.toFixed(2)}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewSale(sale)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Venda</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteSale(sale.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-bold text-green-600">R$ {sale.total.toFixed(2)}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewSale(sale)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Venda</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteSale(sale.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Mobile Layout */}
-                  <div className="sm:hidden p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">Venda #{sale.id.slice(-8)}</p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {new Date(sale.created_at).toLocaleString('pt-BR')}
-                        </p>
+                    {/* Mobile Layout */}
+                    <div className="sm:hidden p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">Venda #{sale.id.slice(-8)}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {new Date(sale.created_at).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600 text-lg">R$ {sale.total.toFixed(2)}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-600 text-lg">R$ {sale.total.toFixed(2)}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {sale.sale_items?.length || 0} itens
-                      </Badge>
                       
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewSale(sale)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                              <Trash2 className="h-3 w-3 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="max-w-sm mx-auto">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-base">Excluir Venda</AlertDialogTitle>
-                              <AlertDialogDescription className="text-sm">
-                                Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
-                              <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteSale(sale.id)}
-                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {uniqueItemsCount} {uniqueItemsCount === 1 ? 'item' : 'itens'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {totalQuantity} {totalQuantity === 1 ? 'un.' : 'uns.'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewSale(sale)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-sm mx-auto">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-base">Excluir Venda</AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm">
+                                  Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
+                                <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteSale(sale.id)}
+                                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               
               {filteredSales.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
