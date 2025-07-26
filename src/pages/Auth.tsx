@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -36,10 +35,15 @@ const Auth: React.FC = () => {
         throw error;
       }
 
-      toast({
+      const toastResult = toast({
         title: "Login realizado com sucesso!",
         description: "Redirecionando para o painel administrativo...",
       });
+      
+      // Fechar o toast automaticamente após 1 segundo
+      setTimeout(() => {
+        toastResult.dismiss();
+      }, 1000);
       
       navigate('/admin');
     } catch (error) {
