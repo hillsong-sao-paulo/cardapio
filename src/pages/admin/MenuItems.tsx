@@ -176,21 +176,27 @@ const MenuItems: React.FC = () => {
       
       <div className="max-w-screen-xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-3xl font-bold">Itens do Cardápio</h1>
-          <div className="flex gap-2">
+          
+          {/* Action buttons - Mobile-first responsive layout */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             {!isBulkEditMode ? (
               <>
                 <Button
                   onClick={() => setIsBulkEditMode(true)}
                   variant="outline"
-                  className="gap-2"
+                  className="w-full sm:w-auto gap-2 justify-center"
                 >
-                  <Package className="h-4 w-4" />
-                  Editar Estoque
+                  <Package className="h-4 w-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Editar Estoque</span>
+                  <span className="sm:hidden">Estoque</span>
                 </Button>
-                <Button onClick={openCreateDialog} className="gap-2">
-                  <Plus className="h-4 w-4" />
+                <Button 
+                  onClick={openCreateDialog} 
+                  className="w-full sm:w-auto gap-2 justify-center"
+                >
+                  <Plus className="h-4 w-4 flex-shrink-0" />
                   Novo Item
                 </Button>
               </>
@@ -199,17 +205,17 @@ const MenuItems: React.FC = () => {
                 <Button
                   onClick={saveBulkStockUpdates}
                   disabled={bulkUpdateStockMutation.isPending || Object.keys(bulkStockUpdates).length === 0}
-                  className="gap-2"
+                  className="w-full sm:w-auto gap-2 justify-center"
                 >
-                  <Save className="h-4 w-4" />
+                  <Save className="h-4 w-4 flex-shrink-0" />
                   {bulkUpdateStockMutation.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
                 <Button
                   onClick={cancelBulkEdit}
                   variant="outline"
-                  className="gap-2"
+                  className="w-full sm:w-auto gap-2 justify-center"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4 flex-shrink-0" />
                   Cancelar
                 </Button>
               </>
@@ -219,7 +225,7 @@ const MenuItems: React.FC = () => {
 
         {isBulkEditMode && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-blue-800 font-medium">
+            <p className="text-blue-800 font-medium text-sm sm:text-base">
               Modo de edição em massa ativado. Altere os valores de estoque e clique em "Salvar" para aplicar as mudanças.
             </p>
           </div>
