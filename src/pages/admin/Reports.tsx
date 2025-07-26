@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,10 +25,19 @@ declare module 'jspdf' {
 const Reports: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(),
-    to: new Date()
+  
+  // Inicializar dateRange com data final ajustada para incluir o dia inteiro
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+    const today = new Date();
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return {
+      from: today,
+      to: endOfDay
+    };
   });
+  
   const [hourRange, setHourRange] = useState<{ from: number; to: number }>({ from: 0, to: 23 });
   const [selectedItemsFilter, setSelectedItemsFilter] = useState<string>('all');
 
