@@ -39,8 +39,12 @@ const Reports: React.FC = () => {
       const saleDate = new Date(sale.created_at);
       const saleHour = saleDate.getHours();
       
+      // Ajustar a data final para incluir o dia inteiro se for o mesmo dia
+      const adjustedToDate = new Date(dateRange.to);
+      adjustedToDate.setHours(23, 59, 59, 999);
+      
       // Verificar se está dentro do período de data
-      const isWithinDateRange = saleDate >= dateRange.from && saleDate <= dateRange.to;
+      const isWithinDateRange = saleDate >= dateRange.from && saleDate <= adjustedToDate;
       
       // Verificar se está dentro do período de hora
       const isWithinHourRange = saleHour >= hourRange.from && saleHour <= hourRange.to;
