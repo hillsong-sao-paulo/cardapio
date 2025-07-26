@@ -43,8 +43,8 @@ const Profile: React.FC = () => {
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: profile?.name || '',
-      email: profile?.email || '',
+      name: '',
+      email: '',
     },
   });
 
@@ -69,7 +69,10 @@ const Profile: React.FC = () => {
 
   const onUpdateProfile = async (values: z.infer<typeof profileSchema>) => {
     try {
-      await updateProfileMutation.mutateAsync(values);
+      await updateProfileMutation.mutateAsync({
+        name: values.name,
+        email: values.email,
+      });
       toast({
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
