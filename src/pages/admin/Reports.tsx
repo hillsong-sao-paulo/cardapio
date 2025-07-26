@@ -1,10 +1,11 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Clock, BarChart2, Download, FileText } from 'lucide-react';
+import { CalendarIcon, Clock, BarChart2, Download, FileText, TrendingUp, ShoppingCart, DollarSign } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -25,17 +26,45 @@ declare module 'jspdf' {
 const Reports: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(),
+    to: new Date()
+  });
   const [hourRange, setHourRange] = useState<{ from: number; to: number }>({ from: 0, to: 23 });
   const [selectedItemsFilter, setSelectedItemsFilter] = useState<string>('all');
 
-  // Filtrar vendas por data selecionada
+  // Filtrar vendas por período de data e hora selecionado
   const filteredSales = React.useMemo(() => {
     return sales.filter(sale => {
       const saleDate = new Date(sale.created_at);
-      return saleDate.toDateString() === selectedDate.toDateString();
+      const saleHour = saleDate.getHours();
+      
+      // Verificar se está dentro do período de data
+      const isWithinDateRange = saleDate >= dateRange.from && saleDate <= dateRange.to;
+      
+      // Verificar se está dentro do período de hora
+      const isWithinHourRange = saleHour >= hourRange.from && saleHour <= hourRange.to;
+      
+      return isWithinDateRange && isWithinHourRange;
     });
-  }, [sales, selectedDate]);
+  }, [sales, dateRange, hourRange]);
+
+  // Calcular estatísticas rápidas
+  const quickStats = useMemo(() => {
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+    const totalTransactions = filteredSales.length;
+    const totalItemsSold = filteredSales.reduce((sum, sale) => {
+      return sum + (sale.sale_items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0);
+    }, 0);
+    const averageTicket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+
+    return {
+      totalRevenue,
+      totalTransactions,
+      totalItemsSold,
+      averageTicket
+    };
+  }, [filteredSales]);
 
   // Processar dados para o gráfico de vendas por hora
   const salesByHour = React.useMemo(() => {
@@ -58,7 +87,7 @@ const Reports: React.FC = () => {
   const salesByItem = useMemo(() => {
     const itemSales: Record<string, { name: string; quantity: number; revenue: number; sales: number }> = {};
     
-    sales.forEach(sale => {
+    filteredSales.forEach(sale => {
       sale.sale_items?.forEach(saleItem => {
         const itemId = saleItem.menu_item_id;
         const menuItem = menuItems.find(item => item.id === itemId);
@@ -92,7 +121,7 @@ const Reports: React.FC = () => {
 
     // Ordenar por receita (maior para menor)
     return result.sort((a, b) => b.revenue - a.revenue);
-  }, [sales, menuItems, selectedItemsFilter]);
+  }, [filteredSales, menuItems, selectedItemsFilter]);
 
   // Gerar opções de horas para o select
   const hourOptions = Array.from({ length: 24 }, (_, i) => ({
@@ -131,7 +160,7 @@ const Reports: React.FC = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `vendas-por-item-${format(new Date(), 'dd-MM-yyyy')}.csv`);
+    link.setAttribute('download', `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -152,7 +181,7 @@ const Reports: React.FC = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `vendas-por-hora-${format(selectedDate, 'dd-MM-yyyy')}.csv`);
+    link.setAttribute('download', `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -172,12 +201,13 @@ const Reports: React.FC = () => {
       doc.text('Relatório de Vendas por Item', 14, 25);
       
       doc.setFontSize(10);
-      doc.text(`Data do relatório: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 35);
+      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
+      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
       
       if (selectedItemsFilter !== 'all') {
         const selectedItem = menuItems.find(item => item.id === selectedItemsFilter);
         if (selectedItem) {
-          doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 42);
+          doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 49);
         }
       }
 
@@ -199,7 +229,7 @@ const Reports: React.FC = () => {
           ...tableData,
           ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
         ],
-        startY: selectedItemsFilter !== 'all' ? 50 : 45,
+        startY: selectedItemsFilter !== 'all' ? 56 : 49,
         styles: { 
           fontSize: 8,
           cellPadding: 3
@@ -214,17 +244,10 @@ const Reports: React.FC = () => {
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245]
-        },
-        footStyles: {
-          fillColor: [59, 130, 246],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        showFoot: true,
-        foot: [['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]]
+        }
       });
 
-      doc.save(`vendas-por-item-${format(new Date(), 'dd-MM-yyyy')}.pdf`);
+      doc.save(`vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`);
     });
   };
 
@@ -241,9 +264,8 @@ const Reports: React.FC = () => {
       doc.text('Relatório de Vendas por Hora', 14, 25);
       
       doc.setFontSize(10);
-      doc.text(`Data: ${format(selectedDate, 'dd/MM/yyyy')}`, 14, 35);
+      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
       doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-      doc.text(`Relatório gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 49);
 
       const tableData = salesByHour.map(data => [
         data.hourLabel,
@@ -259,7 +281,7 @@ const Reports: React.FC = () => {
           ...tableData,
           ['TOTAL', `R$ ${totalSales.toFixed(2)}`]
         ],
-        startY: 55,
+        startY: 50,
         styles: { 
           fontSize: 9,
           cellPadding: 4
@@ -281,13 +303,7 @@ const Reports: React.FC = () => {
         }
       });
 
-      // Adicionar linha de total manualmente no final
-      const finalY = (doc as any).lastAutoTable.finalY + 5;
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
-      doc.text(`Total Geral: R$ ${totalSales.toFixed(2)}`, 14, finalY);
-
-      doc.save(`vendas-por-hora-${format(selectedDate, 'dd-MM-yyyy')}.pdf`);
+      doc.save(`vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`);
     });
   };
 
@@ -302,6 +318,155 @@ const Reports: React.FC = () => {
       <div className="w-full max-w-[1280px] mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Relatórios</h1>
+        </div>
+
+        {/* Filtros Globais */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros do Relatório</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Período de Data */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Período de Data</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full sm:w-[140px] justify-start text-left font-normal",
+                          !dateRange.from && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : <span>Data inicial</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-sm text-muted-foreground self-center">até</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full sm:w-[140px] justify-start text-left font-normal",
+                          !dateRange.to && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : <span>Data final</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Período de Hora */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Período de Hora</label>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Das</span>
+                  <Select value={hourRange.from.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, from: parseInt(value) }))}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hourOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value.toString()}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">às</span>
+                  <Select value={hourRange.to.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, to: parseInt(value) }))}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hourOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value.toString()}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cards de Estatísticas Rápidas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                R$ {quickStats.totalRevenue.toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {quickStats.totalTransactions}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Itens Vendidos</CardTitle>
+              <BarChart2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {quickStats.totalItemsSold}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                R$ {quickStats.averageTicket.toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Relatório de Vendas por Item */}
@@ -390,83 +555,25 @@ const Reports: React.FC = () => {
           <CardHeader>
             <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
               <CardTitle>Vendas por Hora (R$)</CardTitle>
-              <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:gap-4 sm:space-y-0">
-                {/* Filtro de Range de Horas */}
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Das</span>
-                  <Select value={hourRange.from.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, from: parseInt(value) }))}>
-                    <SelectTrigger className="w-16 sm:w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hourOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value.toString()}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-muted-foreground">às</span>
-                  <Select value={hourRange.to.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, to: parseInt(value) }))}>
-                    <SelectTrigger className="w-16 sm:w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hourOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value.toString()}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Filtro de Data */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full sm:w-[240px] justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportHourSalesCSV}
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    CSV
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportHourSalesPDF}
-                    className="gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    PDF
-                  </Button>
-                </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportHourSalesCSV}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportHourSalesPDF}
+                  className="gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF
+                </Button>
               </div>
             </div>
           </CardHeader>
