@@ -21,7 +21,8 @@ import {
   BarChart3, 
   LogOut,
   Home,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +70,12 @@ const AdminLayout: React.FC = () => {
       icon: BarChart3,
       path: '/admin/sales',
       value: 'sales'
+    },
+    {
+      title: 'Relatórios',
+      icon: FileText,
+      path: '/admin/reports',
+      value: 'reports'
     }
   ];
 
@@ -254,7 +261,7 @@ const AdminLayout: React.FC = () => {
               <div className="px-6 py-2">
                 <div className="hidden md:flex">
                   <Tabs value={getCurrentTabValue()} onValueChange={handleTabChange} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-gray-50">
+                    <TabsList className="grid w-full grid-cols-5 bg-gray-50">
                       {menuItems.map((item) => (
                         <TabsTrigger key={item.value} value={item.value} className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                           <item.icon className="h-4 w-4" />
