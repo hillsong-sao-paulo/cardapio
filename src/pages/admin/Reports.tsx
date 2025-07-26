@@ -473,10 +473,16 @@ const Reports: React.FC = () => {
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-              <CardTitle className="flex items-center gap-2">
-                <BarChart2 className="h-5 w-5" />
-                Relatório de Vendas por Item
-              </CardTitle>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart2 className="h-5 w-5" />
+                  Relatório de Vendas por Item
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Período: {format(dateRange.from, 'dd/MM/yyyy')} até {format(dateRange.to, 'dd/MM/yyyy')} | 
+                  Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
+                </p>
+              </div>
               <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:gap-4 sm:space-y-0">
                 <Select value={selectedItemsFilter} onValueChange={setSelectedItemsFilter}>
                   <SelectTrigger className="w-full sm:w-[200px]">
@@ -554,7 +560,13 @@ const Reports: React.FC = () => {
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-              <CardTitle>Vendas por Hora (R$)</CardTitle>
+              <div>
+                <CardTitle>Vendas por Hora (R$)</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Período: {format(dateRange.from, 'dd/MM/yyyy')} até {format(dateRange.to, 'dd/MM/yyyy')} | 
+                  Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
+                </p>
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
