@@ -143,25 +143,133 @@ const Reports: React.FC = () => {
     label: `${i.toString().padStart(2, '0')}:00`
   }));
 
-  // Função auxiliar para adicionar logo ao PDF
-  const addLogoToPDF = (doc: jsPDF, callback: () => void) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-      try {
-        // Adicionar logo no topo direito
-        doc.addImage(img, 'PNG', doc.internal.pageSize.width - 30, 10, 20, 20);
-      } catch (error) {
-        console.log('Erro ao adicionar logo:', error);
-      }
-      callback();
-    };
-    img.onerror = function() {
-      // Se não conseguir carregar a logo, continua sem ela
-      console.log('Não foi possível carregar a logo');
-      callback();
-    };
-    img.src = '/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png';
+  // Função para exportar relatório completo em PDF
+  const exportFullReportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Cabeçalho
+    doc.setFontSize(18);
+    doc.text('Hillsong Lounge - Encounterfest 2025', 14, 20);
+    
+    doc.setFontSize(16);
+    doc.text('Relatório Completo de Vendas', 14, 30);
+    
+    doc.setFontSize(10);
+    doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 40);
+    doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 47);
+    
+    let yPosition = 60;
+
+    // Estatísticas Rápidas
+    doc.setFontSize(14);
+    doc.text('Resumo Executivo', 14, yPosition);
+    yPosition += 10;
+
+    doc.autoTable({
+      head: [['Métrica', 'Valor']],
+      body: [
+        ['Receita Total', `R$ ${quickStats.totalRevenue.toFixed(2)}`],
+        ['Total de Vendas', quickStats.totalTransactions.toString()],
+        ['Itens Vendidos', quickStats.totalItemsSold.toString()],
+        ['Ticket Médio', `R$ ${quickStats.averageTicket.toFixed(2)}`]
+      ],
+      startY: yPosition,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      headStyles: { 
+        fillColor: [59, 130, 246],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 20;
+
+    // Vendas por Item
+    doc.setFontSize(14);
+    doc.text('Vendas por Item', 14, yPosition);
+    yPosition += 10;
+
+    const itemTableData = salesByItem.map(item => [
+      item.name,
+      item.quantity.toString(),
+      item.sales.toString(),
+      `R$ ${item.revenue.toFixed(2)}`
+    ]);
+
+    const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
+    const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
+    const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
+
+    doc.autoTable({
+      head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
+      body: [
+        ...itemTableData,
+        ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
+      ],
+      startY: yPosition,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 3
+      },
+      headStyles: { 
+        fillColor: [59, 130, 246],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Nova página para vendas por hora
+    doc.addPage();
+    yPosition = 20;
+
+    doc.setFontSize(14);
+    doc.text('Vendas por Hora', 14, yPosition);
+    yPosition += 10;
+
+    const hourTableData = salesByHour.map(data => [
+      data.hourLabel,
+      `R$ ${data.total.toFixed(2)}`
+    ]);
+
+    const totalHourSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
+
+    doc.autoTable({
+      head: [['Hora', 'Total de Vendas']],
+      body: [
+        ...hourTableData,
+        ['TOTAL', `R$ ${totalHourSales.toFixed(2)}`]
+      ],
+      startY: yPosition,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 4
+      },
+      headStyles: { 
+        fillColor: [59, 130, 246],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        1: { halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Download do arquivo
+    const fileName = `relatorio-completo-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+    doc.save(fileName);
   };
 
   // Exportar vendas por item em CSV
@@ -213,65 +321,63 @@ const Reports: React.FC = () => {
     try {
       const doc = new jsPDF();
       
-      addLogoToPDF(doc, () => {
-        // Cabeçalho
-        doc.setFontSize(18);
-        doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
-        
-        doc.setFontSize(16);
-        doc.text('Relatório de Vendas por Item', 14, 25);
-        
-        doc.setFontSize(10);
-        doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
-        doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-        
-        if (selectedItemsFilter !== 'all') {
-          const selectedItem = menuItems.find(item => item.id === selectedItemsFilter);
-          if (selectedItem) {
-            doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 49);
-          }
+      // Cabeçalho
+      doc.setFontSize(18);
+      doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
+      
+      doc.setFontSize(16);
+      doc.text('Relatório de Vendas por Item', 14, 25);
+      
+      doc.setFontSize(10);
+      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
+      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
+      
+      if (selectedItemsFilter !== 'all') {
+        const selectedItem = menuItems.find(item => item.id === selectedItemsFilter);
+        if (selectedItem) {
+          doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 49);
         }
+      }
 
-        const tableData = salesByItem.map(item => [
-          item.name,
-          item.quantity.toString(),
-          item.sales.toString(),
-          `R$ ${item.revenue.toFixed(2)}`
-        ]);
+      const tableData = salesByItem.map(item => [
+        item.name,
+        item.quantity.toString(),
+        item.sales.toString(),
+        `R$ ${item.revenue.toFixed(2)}`
+      ]);
 
-        // Calcular totais
-        const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
-        const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
-        const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
+      // Calcular totais
+      const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
+      const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
+      const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
 
-        doc.autoTable({
-          head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
-          body: [
-            ...tableData,
-            ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
-          ],
-          startY: selectedItemsFilter !== 'all' ? 56 : 49,
-          styles: { 
-            fontSize: 8,
-            cellPadding: 3
-          },
-          headStyles: { 
-            fillColor: [59, 130, 246],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          bodyStyles: {
-            textColor: [0, 0, 0]
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245]
-          }
-        });
-
-        // Forçar o download
-        const fileName = `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-        doc.save(fileName);
+      doc.autoTable({
+        head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
+        body: [
+          ...tableData,
+          ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
+        ],
+        startY: selectedItemsFilter !== 'all' ? 56 : 49,
+        styles: { 
+          fontSize: 8,
+          cellPadding: 3
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          textColor: [0, 0, 0]
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
       });
+
+      // Forçar o download
+      const fileName = `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+      doc.save(fileName);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       // Fallback sem logo
@@ -327,58 +433,48 @@ const Reports: React.FC = () => {
     try {
       const doc = new jsPDF();
       
-      addLogoToPDF(doc, () => {
-        // Cabeçalho
-        doc.setFontSize(18);
-        doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
-        
-        doc.setFontSize(16);
-        doc.text('Relatório de Vendas por Hora', 14, 25);
-        
-        doc.setFontSize(10);
-        doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
-        doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
+      // Cabeçalho
+      doc.setFontSize(18);
+      doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
+      
+      doc.setFontSize(16);
+      doc.text('Relatório de Vendas por Hora', 14, 25);
+      
+      doc.setFontSize(10);
+      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
+      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
 
-        const tableData = salesByHour.map(data => [
-          data.hourLabel,
-          `R$ ${data.total.toFixed(2)}`
-        ]);
+      const tableData = salesByHour.map(data => [
+        data.hourLabel,
+        `R$ ${data.total.toFixed(2)}`
+      ]);
 
-        // Calcular total
-        const totalSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
+      const totalSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
 
-        doc.autoTable({
-          head: [['Hora', 'Total de Vendas']],
-          body: [
-            ...tableData,
-            ['TOTAL', `R$ ${totalSales.toFixed(2)}`]
-          ],
-          startY: 50,
-          styles: { 
-            fontSize: 9,
-            cellPadding: 4
-          },
-          headStyles: { 
-            fillColor: [59, 130, 246],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          bodyStyles: {
-            textColor: [0, 0, 0]
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245]
-          },
-          columnStyles: {
-            0: { halign: 'center' },
-            1: { halign: 'right' }
-          }
-        });
-
-        // Forçar o download
-        const fileName = `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-        doc.save(fileName);
+      doc.autoTable({
+        head: [['Hora', 'Total de Vendas']],
+        body: [
+          ...tableData,
+          ['TOTAL', `R$ ${totalSales.toFixed(2)}`]
+        ],
+        startY: 50,
+        styles: { 
+          fontSize: 9,
+          cellPadding: 4
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { halign: 'center' },
+          1: { halign: 'right' }
+        }
       });
+
+      const fileName = `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+      doc.save(fileName);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       // Fallback sem logo
@@ -440,6 +536,13 @@ const Reports: React.FC = () => {
       <div className="w-full max-w-[1280px] mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Relatórios</h1>
+          <Button
+            onClick={exportFullReportPDF}
+            className="gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <Download className="h-4 w-4" />
+            Baixar Relatório Completo (PDF)
+          </Button>
         </div>
 
         {/* Filtros Globais */}
