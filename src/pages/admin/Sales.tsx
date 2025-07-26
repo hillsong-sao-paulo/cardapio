@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,24 +101,32 @@ const Sales: React.FC = () => {
       
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-3xl font-bold">Vendas</h1>
-          <div className="flex gap-2">
+          
+          {/* Filters - Mobile-first responsive layout */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {/* Date Filter - Full width on mobile */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}
-                      </>
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto gap-2 justify-start sm:justify-center text-left"
+                >
+                  <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy")
+                      )
                     ) : (
-                      format(dateRange.from, "dd/MM/yyyy")
-                    )
-                  ) : (
-                    <span>Filtrar por data</span>
-                  )}
+                      "Filtrar por data"
+                    )}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -131,9 +138,16 @@ const Sales: React.FC = () => {
                 />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={exportToCSV} className="gap-2">
-              <Download className="h-4 w-4" />
-              Exportar CSV
+
+            {/* Export Button - Full width on mobile */}
+            <Button 
+              variant="outline" 
+              onClick={exportToCSV} 
+              className="w-full sm:w-auto gap-2 justify-center"
+            >
+              <Download className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Exportar CSV</span>
+              <span className="sm:hidden">Exportar</span>
             </Button>
           </div>
         </div>
