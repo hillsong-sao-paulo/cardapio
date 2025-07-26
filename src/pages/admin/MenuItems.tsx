@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Edit2, Trash2, Package, Save, X } from 'lucide-react';
 import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from '@/hooks/useMenuItems';
 import { useBulkUpdateStock } from '@/hooks/useBulkUpdateStock';
@@ -87,20 +88,18 @@ const MenuItems: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este item?')) {
-      try {
-        await deleteItemMutation.mutateAsync(id);
-        toast({
-          title: "Item excluído",
-          description: "O item foi excluído com sucesso.",
-        });
-      } catch (error) {
-        toast({
-          title: "Erro ao excluir item",
-          description: "Ocorreu um erro ao excluir o item.",
-          variant: "destructive"
-        });
-      }
+    try {
+      await deleteItemMutation.mutateAsync(id);
+      toast({
+        title: "Item excluído",
+        description: "O item foi excluído com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir item",
+        description: "Ocorreu um erro ao excluir o item.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -254,13 +253,33 @@ const MenuItems: React.FC = () => {
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Item</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir o item "{item.name}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(item.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   )}
                 </CardTitle>
