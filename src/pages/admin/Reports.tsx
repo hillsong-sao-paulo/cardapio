@@ -29,11 +29,13 @@ const Reports: React.FC = () => {
   // Inicializar dateRange com data final ajustada para incluir o dia inteiro
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
     const today = new Date();
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
     
     return {
-      from: today,
+      from: startOfDay,
       to: endOfDay
     };
   });
@@ -447,58 +449,52 @@ const Reports: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Período de Data */}
+              {/* Período de Data com Range */}
               <div className="space-y-3">
                 <label className="text-sm font-medium">Período de Data</label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full sm:w-[140px] justify-start text-left font-normal",
-                          !dateRange.from && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : <span>Data inicial</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <span className="text-sm text-muted-foreground self-center">até</span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full sm:w-[140px] justify-start text-left font-normal",
-                          !dateRange.to && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : <span>Data final</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => date && setDateRange(prev => ({ ...prev, to: date }))}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange.from && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.from && dateRange.to ? (
+                        dateRange.from.toDateString() === dateRange.to.toDateString() ? 
+                        format(dateRange.from, "dd/MM/yyyy") :
+                        `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
+                      ) : (
+                        <span>Selecionar período</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      selected={{ from: dateRange.from, to: dateRange.to }}
+                      onSelect={(range) => {
+                        if (range?.from) {
+                          const startOfDay = new Date(range.from);
+                          startOfDay.setHours(0, 0, 0, 0);
+                          
+                          const endOfDay = range.to ? new Date(range.to) : new Date(range.from);
+                          endOfDay.setHours(23, 59, 59, 999);
+                          
+                          setDateRange({
+                            from: startOfDay,
+                            to: endOfDay
+                          });
+                        }
+                      }}
+                      numberOfMonths={2}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Período de Hora */}
