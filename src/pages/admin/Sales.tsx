@@ -178,54 +178,113 @@ const Sales: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               {filteredSales.map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="font-medium">Venda #{sale.id.slice(-8)}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(sale.created_at).toLocaleString('pt-BR')}
-                      </p>
+                <div key={sale.id} className="bg-gray-50 rounded-lg">
+                  {/* Desktop Layout */}
+                  <div className="hidden sm:flex items-center justify-between p-4">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <p className="font-medium">Venda #{sale.id.slice(-8)}</p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(sale.created_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">
+                        {sale.sale_items?.length || 0} itens
+                      </Badge>
                     </div>
-                    <Badge variant="secondary">
-                      {sale.sale_items?.length || 0} itens
-                    </Badge>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">R$ {sale.total.toFixed(2)}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewSale(sale)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir Venda</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteSale(sale.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">R$ {sale.total.toFixed(2)}</p>
+
+                  {/* Mobile Layout */}
+                  <div className="sm:hidden p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Venda #{sale.id.slice(-8)}</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {new Date(sale.created_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600 text-lg">R$ {sale.total.toFixed(2)}</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewSale(sale)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir Venda</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteSale(sale.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                    
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="text-xs">
+                        {sale.sale_items?.length || 0} itens
+                      </Badge>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewSale(sale)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                              <Trash2 className="h-3 w-3 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-sm mx-auto">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-base">Excluir Venda</AlertDialogTitle>
+                              <AlertDialogDescription className="text-sm">
+                                Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
+                              <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteSale(sale.id)}
+                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -242,13 +301,13 @@ const Sales: React.FC = () => {
 
         {/* Sale Detail Dialog */}
         <Dialog open={isSaleDetailOpen} onOpenChange={setIsSaleDetailOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalhes da Venda #{selectedSale?.id.slice(-8)}</DialogTitle>
             </DialogHeader>
             {selectedSale && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium">Data da Venda</p>
                     <p className="text-sm text-gray-600">
@@ -265,17 +324,19 @@ const Sales: React.FC = () => {
 
                 <div>
                   <p className="text-sm font-medium mb-2">Itens da Venda</p>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     {selectedSale.sale_items?.map((item) => (
-                      <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium">{item.menu_item.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {item.quantity}x R$ {item.unit_price.toFixed(2)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">R$ {item.subtotal.toFixed(2)}</p>
+                      <div key={item.id} className="bg-gray-50 rounded p-3">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-1 sm:space-y-0">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{item.menu_item.name}</p>
+                            <p className="text-xs text-gray-600">
+                              {item.quantity}x R$ {item.unit_price.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-sm">R$ {item.subtotal.toFixed(2)}</p>
+                          </div>
                         </div>
                       </div>
                     ))}
