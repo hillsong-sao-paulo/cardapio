@@ -20,6 +20,7 @@ export type Database = {
           email: string
           id: string
           is_active: boolean
+          name: string | null
           password_hash: string
           updated_at: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           email: string
           id?: string
           is_active?: boolean
+          name?: string | null
           password_hash: string
           updated_at?: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           email?: string
           id?: string
           is_active?: boolean
+          name?: string | null
           password_hash?: string
           updated_at?: string
         }
@@ -174,8 +177,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      change_admin_password: {
+        Args: {
+          user_id: string
+          current_password: string
+          new_password: string
+        }
+        Returns: boolean
+      }
+      get_admin_profile: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          name: string
+          email: string
+          created_at: string
+        }[]
+      }
       is_admin_user: {
         Args: { user_email: string; user_password: string }
+        Returns: boolean
+      }
+      update_admin_profile: {
+        Args: { user_id: string; new_name: string; new_email: string }
         Returns: boolean
       }
     }

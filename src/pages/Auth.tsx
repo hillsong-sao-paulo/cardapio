@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, User } from 'lucide-react';
 import SEO from '@/components/SEO';
+import { useAuth } from '@/hooks/useAuth';
 
 const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,30 +16,32 @@ const Auth: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, user } = useAuth();
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user) {
+      navigate('/admin');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Simular autenticação simples
-      if (email === 'admin@hillsong.com' && password === 'admin123') {
-        const adminSession = {
-          email: email,
-          loginTime: new Date().toISOString()
-        };
-        
-        localStorage.setItem('admin_session', JSON.stringify(adminSession));
-        
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Redirecionando para o painel administrativo...",
-        });
-        
-        navigate('/admin');
-      } else {
-        throw new Error('Credenciais inválidas');
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        throw error;
       }
+
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Redirecionando para o painel administrativo...",
+      });
+      
+      navigate('/admin');
     } catch (error) {
       toast({
         title: "Erro no login",
