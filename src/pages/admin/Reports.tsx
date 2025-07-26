@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Clock, BarChart2, Download, FileText, TrendingUp, ShoppingCart, DollarSign } from 'lucide-react';
+import { CalendarIcon, Clock, BarChart2, Download, TrendingUp, ShoppingCart, DollarSign } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -13,21 +13,14 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SEO from '@/components/SEO';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => void;
-  }
-}
+import { DateRange } from 'react-day-picker';
 
 const Reports: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
   
   // Inicializar dateRange com data final ajustada para incluir o dia inteiro
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const today = new Date();
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
@@ -45,16 +38,27 @@ const Reports: React.FC = () => {
 
   // Filtrar vendas por período de data e hora selecionado
   const filteredSales = React.useMemo(() => {
+    if (!dateRange?.from && !dateRange?.to) return sales;
+    
     return sales.filter(sale => {
       const saleDate = new Date(sale.created_at);
       const saleHour = saleDate.getHours();
       
       // Ajustar a data final para incluir o dia inteiro se for o mesmo dia
-      const adjustedToDate = new Date(dateRange.to);
-      adjustedToDate.setHours(23, 59, 59, 999);
+      const adjustedToDate = dateRange.to ? new Date(dateRange.to) : null;
+      if (adjustedToDate) {
+        adjustedToDate.setHours(23, 59, 59, 999);
+      }
       
       // Verificar se está dentro do período de data
-      const isWithinDateRange = saleDate >= dateRange.from && saleDate <= adjustedToDate;
+      let isWithinDateRange = true;
+      if (dateRange.from && dateRange.to) {
+        isWithinDateRange = saleDate >= dateRange.from && saleDate <= adjustedToDate!;
+      } else if (dateRange.from) {
+        isWithinDateRange = saleDate >= dateRange.from;
+      } else if (dateRange.to) {
+        isWithinDateRange = saleDate <= adjustedToDate!;
+      }
       
       // Verificar se está dentro do período de hora
       const isWithinHourRange = saleHour >= hourRange.from && saleHour <= hourRange.to;
@@ -143,135 +147,6 @@ const Reports: React.FC = () => {
     label: `${i.toString().padStart(2, '0')}:00`
   }));
 
-  // Função para exportar relatório completo em PDF
-  const exportFullReportPDF = () => {
-    const doc = new jsPDF();
-    
-    // Cabeçalho
-    doc.setFontSize(18);
-    doc.text('Hillsong Lounge - Encounterfest 2025', 14, 20);
-    
-    doc.setFontSize(16);
-    doc.text('Relatório Completo de Vendas', 14, 30);
-    
-    doc.setFontSize(10);
-    doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 40);
-    doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 47);
-    
-    let yPosition = 60;
-
-    // Estatísticas Rápidas
-    doc.setFontSize(14);
-    doc.text('Resumo Executivo', 14, yPosition);
-    yPosition += 10;
-
-    doc.autoTable({
-      head: [['Métrica', 'Valor']],
-      body: [
-        ['Receita Total', `R$ ${quickStats.totalRevenue.toFixed(2)}`],
-        ['Total de Vendas', quickStats.totalTransactions.toString()],
-        ['Itens Vendidos', quickStats.totalItemsSold.toString()],
-        ['Ticket Médio', `R$ ${quickStats.averageTicket.toFixed(2)}`]
-      ],
-      startY: yPosition,
-      styles: { 
-        fontSize: 9,
-        cellPadding: 3
-      },
-      headStyles: { 
-        fillColor: [59, 130, 246],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      margin: { left: 14, right: 14 }
-    });
-
-    yPosition = (doc as any).lastAutoTable.finalY + 20;
-
-    // Vendas por Item
-    doc.setFontSize(14);
-    doc.text('Vendas por Item', 14, yPosition);
-    yPosition += 10;
-
-    const itemTableData = salesByItem.map(item => [
-      item.name,
-      item.quantity.toString(),
-      item.sales.toString(),
-      `R$ ${item.revenue.toFixed(2)}`
-    ]);
-
-    const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
-    const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
-    const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
-
-    doc.autoTable({
-      head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
-      body: [
-        ...itemTableData,
-        ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
-      ],
-      startY: yPosition,
-      styles: { 
-        fontSize: 8,
-        cellPadding: 3
-      },
-      headStyles: { 
-        fillColor: [59, 130, 246],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { left: 14, right: 14 }
-    });
-
-    // Nova página para vendas por hora
-    doc.addPage();
-    yPosition = 20;
-
-    doc.setFontSize(14);
-    doc.text('Vendas por Hora', 14, yPosition);
-    yPosition += 10;
-
-    const hourTableData = salesByHour.map(data => [
-      data.hourLabel,
-      `R$ ${data.total.toFixed(2)}`
-    ]);
-
-    const totalHourSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
-
-    doc.autoTable({
-      head: [['Hora', 'Total de Vendas']],
-      body: [
-        ...hourTableData,
-        ['TOTAL', `R$ ${totalHourSales.toFixed(2)}`]
-      ],
-      startY: yPosition,
-      styles: { 
-        fontSize: 9,
-        cellPadding: 4
-      },
-      headStyles: { 
-        fillColor: [59, 130, 246],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      columnStyles: {
-        0: { halign: 'center' },
-        1: { halign: 'right' }
-      },
-      margin: { left: 14, right: 14 }
-    });
-
-    // Download do arquivo
-    const fileName = `relatorio-completo-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-    doc.save(fileName);
-  };
-
   // Exportar vendas por item em CSV
   const exportItemSalesCSV = () => {
     const csvContent = [
@@ -288,7 +163,7 @@ const Reports: React.FC = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.csv`);
+    link.setAttribute('download', `vendas-por-item-${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje'}-${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje'}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -309,220 +184,11 @@ const Reports: React.FC = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.csv`);
+    link.setAttribute('download', `vendas-por-hora-${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje'}-${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje'}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Exportar vendas por item em PDF
-  const exportItemSalesPDF = () => {
-    try {
-      const doc = new jsPDF();
-      
-      // Cabeçalho
-      doc.setFontSize(18);
-      doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
-      
-      doc.setFontSize(16);
-      doc.text('Relatório de Vendas por Item', 14, 25);
-      
-      doc.setFontSize(10);
-      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
-      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-      
-      if (selectedItemsFilter !== 'all') {
-        const selectedItem = menuItems.find(item => item.id === selectedItemsFilter);
-        if (selectedItem) {
-          doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 49);
-        }
-      }
-
-      const tableData = salesByItem.map(item => [
-        item.name,
-        item.quantity.toString(),
-        item.sales.toString(),
-        `R$ ${item.revenue.toFixed(2)}`
-      ]);
-
-      // Calcular totais
-      const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
-      const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
-      const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
-
-      doc.autoTable({
-        head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
-        body: [
-          ...tableData,
-          ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
-        ],
-        startY: selectedItemsFilter !== 'all' ? 56 : 49,
-        styles: { 
-          fontSize: 8,
-          cellPadding: 3
-        },
-        headStyles: { 
-          fillColor: [59, 130, 246],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        }
-      });
-
-      // Forçar o download
-      const fileName = `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-      doc.save(fileName);
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      // Fallback sem logo
-      const doc = new jsPDF();
-      
-      // Cabeçalho
-      doc.setFontSize(18);
-      doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
-      
-      doc.setFontSize(16);
-      doc.text('Relatório de Vendas por Item', 14, 25);
-      
-      doc.setFontSize(10);
-      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
-      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-
-      const tableData = salesByItem.map(item => [
-        item.name,
-        item.quantity.toString(),
-        item.sales.toString(),
-        `R$ ${item.revenue.toFixed(2)}`
-      ]);
-
-      const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
-      const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
-      const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
-
-      doc.autoTable({
-        head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
-        body: [
-          ...tableData,
-          ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
-        ],
-        startY: 49,
-        styles: { 
-          fontSize: 8,
-          cellPadding: 3
-        },
-        headStyles: { 
-          fillColor: [59, 130, 246],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        }
-      });
-
-      const fileName = `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-      doc.save(fileName);
-    }
-  };
-
-  // Exportar vendas por hora em PDF
-  const exportHourSalesPDF = () => {
-    try {
-      const doc = new jsPDF();
-      
-      // Cabeçalho
-      doc.setFontSize(18);
-      doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
-      
-      doc.setFontSize(16);
-      doc.text('Relatório de Vendas por Hora', 14, 25);
-      
-      doc.setFontSize(10);
-      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
-      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-
-      const tableData = salesByHour.map(data => [
-        data.hourLabel,
-        `R$ ${data.total.toFixed(2)}`
-      ]);
-
-      const totalSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
-
-      doc.autoTable({
-        head: [['Hora', 'Total de Vendas']],
-        body: [
-          ...tableData,
-          ['TOTAL', `R$ ${totalSales.toFixed(2)}`]
-        ],
-        startY: 50,
-        styles: { 
-          fontSize: 9,
-          cellPadding: 4
-        },
-        headStyles: { 
-          fillColor: [59, 130, 246],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { halign: 'center' },
-          1: { halign: 'right' }
-        }
-      });
-
-      const fileName = `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-      doc.save(fileName);
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      // Fallback sem logo
-      const doc = new jsPDF();
-      
-      // Cabeçalho
-      doc.setFontSize(18);
-      doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
-      
-      doc.setFontSize(16);
-      doc.text('Relatório de Vendas por Hora', 14, 25);
-      
-      doc.setFontSize(10);
-      doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
-      doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-
-      const tableData = salesByHour.map(data => [
-        data.hourLabel,
-        `R$ ${data.total.toFixed(2)}`
-      ]);
-
-      const totalSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
-
-      doc.autoTable({
-        head: [['Hora', 'Total de Vendas']],
-        body: [
-          ...tableData,
-          ['TOTAL', `R$ ${totalSales.toFixed(2)}`]
-        ],
-        startY: 50,
-        styles: { 
-          fontSize: 9,
-          cellPadding: 4
-        },
-        headStyles: { 
-          fillColor: [59, 130, 246],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { halign: 'center' },
-          1: { halign: 'right' }
-        }
-      });
-
-      const fileName = `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
-      doc.save(fileName);
-    }
   };
 
   return (
@@ -536,13 +202,6 @@ const Reports: React.FC = () => {
       <div className="w-full max-w-[1280px] mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Relatórios</h1>
-          <Button
-            onClick={exportFullReportPDF}
-            className="gap-2 bg-green-600 hover:bg-green-700"
-          >
-            <Download className="h-4 w-4" />
-            Baixar Relatório Completo (PDF)
-          </Button>
         </div>
 
         {/* Filtros Globais */}
@@ -561,11 +220,11 @@ const Reports: React.FC = () => {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !dateRange.from && "text-muted-foreground"
+                        !dateRange?.from && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.from && dateRange.to ? (
+                      {dateRange?.from && dateRange?.to ? (
                         dateRange.from.toDateString() === dateRange.to.toDateString() ? 
                         format(dateRange.from, "dd/MM/yyyy") :
                         `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
@@ -577,7 +236,7 @@ const Reports: React.FC = () => {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="range"
-                      selected={{ from: dateRange.from, to: dateRange.to }}
+                      selected={dateRange}
                       onSelect={(range) => {
                         if (range?.from) {
                           const startOfDay = new Date(range.from);
@@ -590,6 +249,8 @@ const Reports: React.FC = () => {
                             from: startOfDay,
                             to: endOfDay
                           });
+                        } else {
+                          setDateRange(range);
                         }
                       }}
                       numberOfMonths={2}
@@ -698,7 +359,7 @@ const Reports: React.FC = () => {
                   Relatório de Vendas por Item
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Período: {format(dateRange.from, 'dd/MM/yyyy')} até {format(dateRange.to, 'dd/MM/yyyy')} | 
+                  Período: {dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : 'N/A'} até {dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : 'N/A'} | 
                   Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
                 </p>
               </div>
@@ -716,26 +377,15 @@ const Reports: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportItemSalesCSV}
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    CSV
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportItemSalesPDF}
-                    className="gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    PDF
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportItemSalesCSV}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  CSV
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -782,30 +432,19 @@ const Reports: React.FC = () => {
               <div>
                 <CardTitle>Vendas por Hora (R$)</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Período: {format(dateRange.from, 'dd/MM/yyyy')} até {format(dateRange.to, 'dd/MM/yyyy')} | 
+                  Período: {dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : 'N/A'} até {dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : 'N/A'} | 
                   Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportHourSalesCSV}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  CSV
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportHourSalesPDF}
-                  className="gap-2"
-                >
-                  <FileText className="h-4 w-4" />
-                  PDF
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportHourSalesCSV}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                CSV
+              </Button>
             </div>
           </CardHeader>
           <CardContent>

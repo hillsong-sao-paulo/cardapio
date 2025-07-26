@@ -91,6 +91,46 @@ const Sales: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Exportar vendas detalhadas em CSV (incluindo itens)
+  const exportDetailedCSV = () => {
+    const detailedData: any[] = [];
+    
+    filteredSales.forEach(sale => {
+      sale.sale_items?.forEach(item => {
+        detailedData.push({
+          sale_id: sale.id,
+          sale_date: new Date(sale.created_at).toLocaleString('pt-BR'),
+          sale_total: sale.total,
+          item_name: item.menu_item.name,
+          item_quantity: item.quantity,
+          item_unit_price: item.unit_price,
+          item_subtotal: item.subtotal
+        });
+      });
+    });
+
+    const csvContent = [
+      ['ID da Venda', 'Data da Venda', 'Total da Venda', 'Item', 'Quantidade', 'Preço Unitário', 'Subtotal'],
+      ...detailedData.map(row => [
+        row.sale_id,
+        row.sale_date,
+        `R$ ${row.sale_total.toFixed(2)}`,
+        row.item_name,
+        row.item_quantity,
+        `R$ ${row.item_unit_price.toFixed(2)}`,
+        `R$ ${row.item_subtotal.toFixed(2)}`
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vendas-detalhadas_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <SEO 
@@ -134,21 +174,33 @@ const Sales: React.FC = () => {
                   mode="range"
                   selected={dateRange}
                   onSelect={setDateRange}
+                  numberOfMonths={2}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
 
-            {/* Export Button - Full width on mobile */}
-            <Button 
-              variant="outline" 
-              onClick={exportToCSV} 
-              className="w-full sm:w-auto gap-2 justify-center"
-            >
-              <Download className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Exportar CSV</span>
-              <span className="sm:hidden">Exportar</span>
-            </Button>
+            {/* Export Buttons - Full width on mobile */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={exportToCSV} 
+                className="flex-1 sm:flex-initial gap-2 justify-center"
+              >
+                <Download className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Resumo CSV</span>
+                <span className="sm:hidden">Resumo</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={exportDetailedCSV} 
+                className="flex-1 sm:flex-initial gap-2 justify-center"
+              >
+                <Download className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Detalhado CSV</span>
+                <span className="sm:hidden">Detalhado</span>
+              </Button>
+            </div>
           </div>
         </div>
 
