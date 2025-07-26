@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, Save, X } from 'lucide-react';
 import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from '@/hooks/useMenuItems';
+import { useBulkUpdateStock } from '@/hooks/useBulkUpdateStock';
 import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
 import SEO from '@/components/SEO';
@@ -18,10 +19,13 @@ const MenuItems: React.FC = () => {
   const createItemMutation = useCreateMenuItem();
   const updateItemMutation = useUpdateMenuItem();
   const deleteItemMutation = useDeleteMenuItem();
+  const bulkUpdateStockMutation = useBulkUpdateStock();
   const { data: categories = [] } = useCategories();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [isBulkEditMode, setIsBulkEditMode] = useState(false);
+  const [bulkStockUpdates, setBulkStockUpdates] = useState<Record<string, number>>({});
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -100,6 +104,50 @@ const MenuItems: React.FC = () => {
     }
   };
 
+  const handleBulkStockUpdate = (itemId: string, stock: number) => {
+    setBulkStockUpdates(prev => ({
+      ...prev,
+      [itemId]: stock
+    }));
+  };
+
+  const saveBulkStockUpdates = async () => {
+    const updates = Object.entries(bulkStockUpdates).map(([id, stock]) => ({
+      id,
+      stock
+    }));
+
+    if (updates.length === 0) {
+      toast({
+        title: "Nenhuma alteração",
+        description: "Nenhum estoque foi modificado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await bulkUpdateStockMutation.mutateAsync(updates);
+      setBulkStockUpdates({});
+      setIsBulkEditMode(false);
+      toast({
+        title: "Estoque atualizado",
+        description: `${updates.length} item(s) foram atualizados com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar estoque",
+        description: "Ocorreu um erro ao atualizar o estoque.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const cancelBulkEdit = () => {
+    setBulkStockUpdates({});
+    setIsBulkEditMode(false);
+  };
+
   const openCreateDialog = () => {
     setFormData({ name: '', description: '', price: '', stock: '', category_id: '', image_url: '' });
     setIsCreateOpen(true);
@@ -130,11 +178,52 @@ const MenuItems: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Itens do Cardápio</h1>
-          <Button onClick={openCreateDialog} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Item
-          </Button>
+          <div className="flex gap-2">
+            {!isBulkEditMode ? (
+              <>
+                <Button
+                  onClick={() => setIsBulkEditMode(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Package className="h-4 w-4" />
+                  Editar Estoque
+                </Button>
+                <Button onClick={openCreateDialog} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Novo Item
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={saveBulkStockUpdates}
+                  disabled={bulkUpdateStockMutation.isPending || Object.keys(bulkStockUpdates).length === 0}
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {bulkUpdateStockMutation.isPending ? 'Salvando...' : 'Salvar'}
+                </Button>
+                <Button
+                  onClick={cancelBulkEdit}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancelar
+                </Button>
+              </>
+            )}
+          </div>
         </div>
+
+        {isBulkEditMode && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 font-medium">
+              Modo de edição em massa ativado. Altere os valores de estoque e clique em "Salvar" para aplicar as mudanças.
+            </p>
+          </div>
+        )}
 
         {/* Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -143,43 +232,62 @@ const MenuItems: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="text-lg font-semibold mb-2">{item.name}</div>
+                    <div className="text-base font-semibold mb-2">{item.name}</div>
                     {item.category?.name && (
                       <Badge variant="secondary" className="text-xs">
                         {item.category.name}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(item)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {!isBulkEditMode && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(item)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600 mb-2">
                   {item.description || 'Sem descrição'}
                 </p>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-3">
                   <span className="text-lg font-bold text-green-600">
                     R$ {item.price.toFixed(2)}
                   </span>
+                </div>
+                
+                {isBulkEditMode ? (
+                  <div className="space-y-2">
+                    <Label htmlFor={`stock-${item.id}`} className="text-sm font-medium">
+                      Estoque
+                    </Label>
+                    <Input
+                      id={`stock-${item.id}`}
+                      type="number"
+                      min="0"
+                      defaultValue={item.stock}
+                      onChange={(e) => handleBulkStockUpdate(item.id, parseInt(e.target.value) || 0)}
+                      className="w-full"
+                    />
+                  </div>
+                ) : (
                   <span className="text-sm text-gray-500">
                     Estoque: {item.stock}
                   </span>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
