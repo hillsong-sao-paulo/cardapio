@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,15 +114,15 @@ const Dashboard: React.FC = () => {
         {/* Gráfico de Vendas por Hora */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
               <CardTitle>Vendas por Hora (R$)</CardTitle>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:gap-4 sm:space-y-0">
                 {/* Filtro de Range de Horas */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Das</span>
+                  <span className="text-muted-foreground">Das</span>
                   <Select value={hourRange.from.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, from: parseInt(value) }))}>
-                    <SelectTrigger className="w-20">
+                    <SelectTrigger className="w-16 sm:w-20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -134,9 +133,9 @@ const Dashboard: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <span className="text-sm text-muted-foreground">às</span>
+                  <span className="text-muted-foreground">às</span>
                   <Select value={hourRange.to.toString()} onValueChange={(value) => setHourRange(prev => ({ ...prev, to: parseInt(value) }))}>
-                    <SelectTrigger className="w-20">
+                    <SelectTrigger className="w-16 sm:w-20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -155,7 +154,7 @@ const Dashboard: React.FC = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-[240px] justify-start text-left font-normal",
+                        "w-full sm:w-[240px] justify-start text-left font-normal",
                         !selectedDate && "text-muted-foreground"
                       )}
                     >
@@ -177,18 +176,22 @@ const Dashboard: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-64 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={salesByHour}>
+                <BarChart data={salesByHour} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="hourLabel" 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
                     interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
                     tickFormatter={(value) => `R$ ${value.toFixed(0)}`}
+                    width={50}
                   />
                   <Tooltip 
                     formatter={(value) => [`R$ ${Number(value).toFixed(2)}`, 'Total']}
