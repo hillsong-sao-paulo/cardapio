@@ -144,13 +144,19 @@ const Reports: React.FC = () => {
   // Função auxiliar para adicionar logo ao PDF
   const addLogoToPDF = (doc: jsPDF, callback: () => void) => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = function() {
-      // Adicionar logo no topo direito
-      doc.addImage(img, 'PNG', doc.internal.pageSize.width - 30, 10, 20, 20);
+      try {
+        // Adicionar logo no topo direito
+        doc.addImage(img, 'PNG', doc.internal.pageSize.width - 30, 10, 20, 20);
+      } catch (error) {
+        console.log('Erro ao adicionar logo:', error);
+      }
       callback();
     };
     img.onerror = function() {
       // Se não conseguir carregar a logo, continua sem ela
+      console.log('Não foi possível carregar a logo');
       callback();
     };
     img.src = '/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png';
@@ -202,9 +208,73 @@ const Reports: React.FC = () => {
 
   // Exportar vendas por item em PDF
   const exportItemSalesPDF = () => {
-    const doc = new jsPDF();
-    
-    addLogoToPDF(doc, () => {
+    try {
+      const doc = new jsPDF();
+      
+      addLogoToPDF(doc, () => {
+        // Cabeçalho
+        doc.setFontSize(18);
+        doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
+        
+        doc.setFontSize(16);
+        doc.text('Relatório de Vendas por Item', 14, 25);
+        
+        doc.setFontSize(10);
+        doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
+        doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
+        
+        if (selectedItemsFilter !== 'all') {
+          const selectedItem = menuItems.find(item => item.id === selectedItemsFilter);
+          if (selectedItem) {
+            doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 49);
+          }
+        }
+
+        const tableData = salesByItem.map(item => [
+          item.name,
+          item.quantity.toString(),
+          item.sales.toString(),
+          `R$ ${item.revenue.toFixed(2)}`
+        ]);
+
+        // Calcular totais
+        const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
+        const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
+        const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
+
+        doc.autoTable({
+          head: [['Item', 'Qtd. Vendida', 'Nº Vendas', 'Receita Total']],
+          body: [
+            ...tableData,
+            ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
+          ],
+          startY: selectedItemsFilter !== 'all' ? 56 : 49,
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3
+          },
+          headStyles: { 
+            fillColor: [59, 130, 246],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          bodyStyles: {
+            textColor: [0, 0, 0]
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
+          }
+        });
+
+        // Forçar o download
+        const fileName = `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+        doc.save(fileName);
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      // Fallback sem logo
+      const doc = new jsPDF();
+      
       // Cabeçalho
       doc.setFontSize(18);
       doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
@@ -215,13 +285,6 @@ const Reports: React.FC = () => {
       doc.setFontSize(10);
       doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
       doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
-      
-      if (selectedItemsFilter !== 'all') {
-        const selectedItem = menuItems.find(item => item.id === selectedItemsFilter);
-        if (selectedItem) {
-          doc.text(`Filtro aplicado: ${selectedItem.name}`, 14, 49);
-        }
-      }
 
       const tableData = salesByItem.map(item => [
         item.name,
@@ -230,7 +293,6 @@ const Reports: React.FC = () => {
         `R$ ${item.revenue.toFixed(2)}`
       ]);
 
-      // Calcular totais
       const totalQuantity = salesByItem.reduce((sum, item) => sum + item.quantity, 0);
       const totalRevenue = salesByItem.reduce((sum, item) => sum + item.revenue, 0);
       const totalSales = salesByItem.reduce((sum, item) => sum + item.sales, 0);
@@ -241,7 +303,7 @@ const Reports: React.FC = () => {
           ...tableData,
           ['TOTAL', totalQuantity.toString(), totalSales.toString(), `R$ ${totalRevenue.toFixed(2)}`]
         ],
-        startY: selectedItemsFilter !== 'all' ? 56 : 49,
+        startY: 49,
         styles: { 
           fontSize: 8,
           cellPadding: 3
@@ -250,24 +312,76 @@ const Reports: React.FC = () => {
           fillColor: [59, 130, 246],
           textColor: [255, 255, 255],
           fontStyle: 'bold'
-        },
-        bodyStyles: {
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
         }
       });
 
-      doc.save(`vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`);
-    });
+      const fileName = `vendas-por-item-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+      doc.save(fileName);
+    }
   };
 
   // Exportar vendas por hora em PDF
   const exportHourSalesPDF = () => {
-    const doc = new jsPDF();
-    
-    addLogoToPDF(doc, () => {
+    try {
+      const doc = new jsPDF();
+      
+      addLogoToPDF(doc, () => {
+        // Cabeçalho
+        doc.setFontSize(18);
+        doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
+        
+        doc.setFontSize(16);
+        doc.text('Relatório de Vendas por Hora', 14, 25);
+        
+        doc.setFontSize(10);
+        doc.text(`Período: ${format(dateRange.from, 'dd/MM/yyyy')} a ${format(dateRange.to, 'dd/MM/yyyy')}`, 14, 35);
+        doc.text(`Horário: ${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`, 14, 42);
+
+        const tableData = salesByHour.map(data => [
+          data.hourLabel,
+          `R$ ${data.total.toFixed(2)}`
+        ]);
+
+        // Calcular total
+        const totalSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
+
+        doc.autoTable({
+          head: [['Hora', 'Total de Vendas']],
+          body: [
+            ...tableData,
+            ['TOTAL', `R$ ${totalSales.toFixed(2)}`]
+          ],
+          startY: 50,
+          styles: { 
+            fontSize: 9,
+            cellPadding: 4
+          },
+          headStyles: { 
+            fillColor: [59, 130, 246],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          bodyStyles: {
+            textColor: [0, 0, 0]
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
+          },
+          columnStyles: {
+            0: { halign: 'center' },
+            1: { halign: 'right' }
+          }
+        });
+
+        // Forçar o download
+        const fileName = `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+        doc.save(fileName);
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      // Fallback sem logo
+      const doc = new jsPDF();
+      
       // Cabeçalho
       doc.setFontSize(18);
       doc.text('Hillsong Lounge - Encounterfest 2025', 14, 15);
@@ -284,7 +398,6 @@ const Reports: React.FC = () => {
         `R$ ${data.total.toFixed(2)}`
       ]);
 
-      // Calcular total
       const totalSales = salesByHour.reduce((sum, data) => sum + data.total, 0);
 
       doc.autoTable({
@@ -303,20 +416,15 @@ const Reports: React.FC = () => {
           textColor: [255, 255, 255],
           fontStyle: 'bold'
         },
-        bodyStyles: {
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
         columnStyles: {
           0: { halign: 'center' },
           1: { halign: 'right' }
         }
       });
 
-      doc.save(`vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`);
-    });
+      const fileName = `vendas-por-hora-${format(dateRange.from, 'dd-MM-yyyy')}-${format(dateRange.to, 'dd-MM-yyyy')}.pdf`;
+      doc.save(fileName);
+    }
   };
 
   return (
