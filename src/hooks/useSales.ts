@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sale, SaleWithItems, SaleItem, MenuItem } from '@/types/database';
-import { useCreateKitchenOrder } from './useKitchenOrders';
 
 export const useSales = () => {
   return useQuery({
@@ -118,10 +117,10 @@ export const useCreateSale = () => {
         // Criar pedido da cozinha (order_number é gerado automaticamente pelo trigger)
         const { data: kitchenOrder, error: kitchenError } = await supabase
           .from('kitchen_orders')
-          .insert([{ 
+          .insert({ 
             sale_id: sale.id,
             total_items: totalItems 
-          }])
+          })
           .select()
           .single();
         
