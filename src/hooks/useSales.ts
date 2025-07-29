@@ -115,7 +115,7 @@ export const useCreateSale = () => {
 
         const totalItems = saleData.items.reduce((sum, item) => sum + item.quantity, 0);
 
-        // Criar pedido da cozinha
+        // Criar pedido da cozinha (order_number é gerado automaticamente pelo trigger)
         const { data: kitchenOrder, error: kitchenError } = await supabase
           .from('kitchen_orders')
           .insert([{ 

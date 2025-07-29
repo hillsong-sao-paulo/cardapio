@@ -56,7 +56,7 @@ export const useCreateKitchenOrder = () => {
         quantity: number;
       }>;
     }) => {
-      // Criar o pedido da cozinha
+      // Criar o pedido da cozinha (order_number é gerado automaticamente pelo trigger)
       const { data: kitchenOrder, error: orderError } = await supabase
         .from('kitchen_orders')
         .insert([{ 
