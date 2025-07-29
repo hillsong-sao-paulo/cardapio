@@ -42,15 +42,24 @@ export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Category> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; name: string; description?: string }) => {
+      console.log('Updating category:', { id, updates });
+      
       const { data, error } = await supabase
         .from('categories')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({
+          name: updates.name,
+          description: updates.description,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {

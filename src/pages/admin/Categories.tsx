@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ const Categories: React.FC = () => {
         description: "A categoria foi criada com sucesso.",
       });
     } catch (error) {
+      console.error('Create error:', error);
       toast({
         title: "Erro ao criar categoria",
         description: "Ocorreu um erro ao criar a categoria.",
@@ -48,10 +50,18 @@ const Categories: React.FC = () => {
     if (!editingCategory) return;
     
     try {
+      console.log('Updating category with data:', {
+        id: editingCategory.id,
+        name: formData.name,
+        description: formData.description
+      });
+
       await updateCategoryMutation.mutateAsync({
         id: editingCategory.id,
-        ...formData
+        name: formData.name,
+        description: formData.description
       });
+      
       setIsEditOpen(false);
       setEditingCategory(null);
       setFormData({ name: '', description: '' });
@@ -60,6 +70,7 @@ const Categories: React.FC = () => {
         description: "A categoria foi atualizada com sucesso.",
       });
     } catch (error) {
+      console.error('Update error:', error);
       toast({
         title: "Erro ao atualizar categoria",
         description: "Ocorreu um erro ao atualizar a categoria.",
@@ -77,6 +88,7 @@ const Categories: React.FC = () => {
           description: "A categoria foi excluída com sucesso.",
         });
       } catch (error) {
+        console.error('Delete error:', error);
         toast({
           title: "Erro ao excluir categoria",
           description: "Ocorreu um erro ao excluir a categoria.",
