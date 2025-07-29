@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 const SalesForm: React.FC = () => {
-  const { data: menuItems = [], isLoading } = useMenuItems();
+  const { data: menuItems = [], isLoading, refetch } = useMenuItems();
   const createSale = useCreateSale();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -32,15 +32,56 @@ const SalesForm: React.FC = () => {
         table: 'menu_items'
       }, (payload) => {
         console.log('Stock updated in real-time:', payload);
-        // Recarregar dados quando o estoque for atualizado
-        window.location.reload();
+        
+        // Invalidar cache do React Query para buscar dados atualizados
+        refetch();
+        
+        // Verificar se algum item no carrinho foi afetado
+        const updatedItemId = payload.new?.id;
+        const newStock = payload.new?.stock || 0;
+        
+        if (updatedItemId) {
+          setCartItems(prevCartItems => {
+            const affectedItem = prevCartItems.find(item => item.menuItem.id === updatedItemId);
+            
+            if (affectedItem) {
+              // Se o item está no carrinho e o estoque foi reduzido
+              if (newStock < affectedItem.quantity) {
+                // Mostrar notificação sobre mudança de estoque
+                toast({
+                  title: "Estoque atualizado",
+                  description: `O estoque de ${affectedItem.menuItem.name} foi reduzido. Verifique seu carrinho.`,
+                  variant: "default"
+                });
+                
+                // Se não há mais estoque, remover do carrinho
+                if (newStock === 0) {
+                  return prevCartItems.filter(item => item.menuItem.id !== updatedItemId);
+                }
+                
+                // Se há estoque mas menos que a quantidade no carrinho, ajustar
+                return prevCartItems.map(item => 
+                  item.menuItem.id === updatedItemId 
+                    ? {
+                        ...item,
+                        quantity: Math.min(item.quantity, newStock),
+                        subtotal: item.menuItem.price * Math.min(item.quantity, newStock)
+                      }
+                    : item
+                );
+              }
+            }
+            
+            return prevCartItems;
+          });
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [refetch, toast]);
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)));
@@ -55,8 +96,10 @@ const SalesForm: React.FC = () => {
   }, [menuItems, activeCategory]);
 
   const addToCart = (item: MenuItemWithCategory) => {
-    // Verificar se há estoque disponível
-    if (item.stock <= 0) {
+    // Buscar o item mais atualizado da lista para verificar estoque atual
+    const currentItem = menuItems.find(menuItem => menuItem.id === item.id);
+    
+    if (!currentItem || currentItem.stock <= 0) {
       toast({
         title: "Estoque insuficiente",
         description: `${item.name} está fora de estoque.`,
@@ -67,10 +110,10 @@ const SalesForm: React.FC = () => {
 
     const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
     if (existingItem) {
-      if (existingItem.quantity >= item.stock) {
+      if (existingItem.quantity >= currentItem.stock) {
         toast({
           title: "Estoque insuficiente",
-          description: `Apenas ${item.stock} unidades disponíveis de ${item.name}.`,
+          description: `Apenas ${currentItem.stock} unidades disponíveis de ${item.name}.`,
           variant: "destructive"
         });
         return;
@@ -82,7 +125,7 @@ const SalesForm: React.FC = () => {
           id: item.id,
           name: item.name,
           price: item.price,
-          stock: item.stock,
+          stock: currentItem.stock,
           category: item.category?.name || '',
           description: item.description || '',
           subItems: []
@@ -98,11 +141,12 @@ const SalesForm: React.FC = () => {
     if (newQuantity <= 0) {
       setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
     } else {
-      const menuItem = menuItems.find(item => item.id === itemId);
-      if (menuItem && newQuantity > menuItem.stock) {
+      // Verificar estoque atual antes de atualizar
+      const currentMenuItem = menuItems.find(item => item.id === itemId);
+      if (currentMenuItem && newQuantity > currentMenuItem.stock) {
         toast({
           title: "Estoque insuficiente",
-          description: `Apenas ${menuItem.stock} unidades disponíveis.`,
+          description: `Apenas ${currentMenuItem.stock} unidades disponíveis.`,
           variant: "destructive"
         });
         return;
@@ -123,6 +167,43 @@ const SalesForm: React.FC = () => {
         description: "Adicione itens ao carrinho antes de processar a venda.",
         variant: "destructive"
       });
+      return;
+    }
+
+    // Verificação final de estoque antes de processar a venda
+    const stockErrors: string[] = [];
+    
+    for (const cartItem of cartItems) {
+      const currentMenuItem = menuItems.find(item => item.id === cartItem.menuItem.id);
+      if (!currentMenuItem) {
+        stockErrors.push(`${cartItem.menuItem.name} não encontrado.`);
+      } else if (currentMenuItem.stock < cartItem.quantity) {
+        stockErrors.push(`${cartItem.menuItem.name}: apenas ${currentMenuItem.stock} disponível, mas ${cartItem.quantity} solicitado.`);
+      }
+    }
+
+    if (stockErrors.length > 0) {
+      toast({
+        title: "Erro de estoque",
+        description: stockErrors.join(' '),
+        variant: "destructive"
+      });
+      
+      // Atualizar carrinho com estoque atual disponível
+      setCartItems(prevItems => 
+        prevItems.map(cartItem => {
+          const currentMenuItem = menuItems.find(item => item.id === cartItem.menuItem.id);
+          if (currentMenuItem && currentMenuItem.stock < cartItem.quantity) {
+            return {
+              ...cartItem,
+              quantity: Math.max(0, currentMenuItem.stock),
+              subtotal: cartItem.menuItem.price * Math.max(0, currentMenuItem.stock)
+            };
+          }
+          return cartItem;
+        }).filter(item => item.quantity > 0)
+      );
+      
       return;
     }
 
