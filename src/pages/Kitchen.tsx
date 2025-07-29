@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
 import KanbanBoard from '@/components/kitchen/KanbanBoard';
@@ -89,7 +90,7 @@ const Kitchen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full max-w-[1280px] mx-auto">
+    <div className="min-h-screen bg-gray-50">
       {/* Header da cozinha */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="px-6 py-4">
