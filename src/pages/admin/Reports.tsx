@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Clock, BarChart2, Download, TrendingUp, ShoppingCart, DollarSign } from 'lucide-react';
+import { CalendarIcon, Clock, BarChart2, Download, TrendingUp, ShoppingCart, DollarSign, ChefHat } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
+import { useKitchenOrders } from '@/hooks/useKitchenOrders';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,8 +19,8 @@ import { DateRange } from 'react-day-picker';
 const Reports: React.FC = () => {
   const { data: menuItems = [] } = useMenuItems();
   const { data: sales = [] } = useSales();
+  const { data: kitchenOrders = [] } = useKitchenOrders();
   
-  // Inicializar dateRange com data final ajustada para incluir o dia inteiro
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const today = new Date();
     const startOfDay = new Date(today);
@@ -36,7 +37,6 @@ const Reports: React.FC = () => {
   const [hourRange, setHourRange] = useState<{ from: number; to: number }>({ from: 0, to: 23 });
   const [selectedItemsFilter, setSelectedItemsFilter] = useState<string>('all');
 
-  // Filtrar vendas por período de data e hora selecionado
   const filteredSales = React.useMemo(() => {
     if (!dateRange?.from && !dateRange?.to) return sales;
     
@@ -44,13 +44,11 @@ const Reports: React.FC = () => {
       const saleDate = new Date(sale.created_at);
       const saleHour = saleDate.getHours();
       
-      // Ajustar a data final para incluir o dia inteiro se for o mesmo dia
       const adjustedToDate = dateRange.to ? new Date(dateRange.to) : null;
       if (adjustedToDate) {
         adjustedToDate.setHours(23, 59, 59, 999);
       }
       
-      // Verificar se está dentro do período de data
       let isWithinDateRange = true;
       if (dateRange.from && dateRange.to) {
         isWithinDateRange = saleDate >= dateRange.from && saleDate <= adjustedToDate!;
@@ -60,14 +58,69 @@ const Reports: React.FC = () => {
         isWithinDateRange = saleDate <= adjustedToDate!;
       }
       
-      // Verificar se está dentro do período de hora
       const isWithinHourRange = saleHour >= hourRange.from && saleHour <= hourRange.to;
       
       return isWithinDateRange && isWithinHourRange;
     });
   }, [sales, dateRange, hourRange]);
 
-  // Calcular estatísticas rápidas
+  const filteredKitchenOrders = useMemo(() => {
+    if (!dateRange?.from && !dateRange?.to) return kitchenOrders;
+    
+    return kitchenOrders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      const orderHour = orderDate.getHours();
+      
+      const adjustedToDate = dateRange.to ? new Date(dateRange.to) : null;
+      if (adjustedToDate) {
+        adjustedToDate.setHours(23, 59, 59, 999);
+      }
+      
+      let isWithinDateRange = true;
+      if (dateRange.from && dateRange.to) {
+        isWithinDateRange = orderDate >= dateRange.from && orderDate <= adjustedToDate!;
+      } else if (dateRange.from) {
+        isWithinDateRange = orderDate >= dateRange.from;
+      } else if (dateRange.to) {
+        isWithinDateRange = orderDate <= adjustedToDate!;
+      }
+      
+      const isWithinHourRange = orderHour >= hourRange.from && orderHour <= hourRange.to;
+      
+      return isWithinDateRange && isWithinHourRange;
+    });
+  }, [kitchenOrders, dateRange, hourRange]);
+
+  const kitchenStats = useMemo(() => {
+    const completedOrders = filteredKitchenOrders.filter(order => order.status === 'ready' && order.ready_at);
+    
+    const ordersWithTime = completedOrders.map(order => {
+      const createdAt = new Date(order.created_at);
+      const readyAt = new Date(order.ready_at!);
+      const timeToReady = (readyAt.getTime() - createdAt.getTime()) / (1000 * 60); // em minutos
+      
+      return {
+        id: order.id,
+        orderNumber: order.order_number,
+        createdAt,
+        readyAt,
+        timeToReady: Math.round(timeToReady),
+        saleId: order.sale_id
+      };
+    });
+
+    const averageTime = ordersWithTime.length > 0 
+      ? ordersWithTime.reduce((sum, order) => sum + order.timeToReady, 0) / ordersWithTime.length 
+      : 0;
+
+    return {
+      ordersWithTime: ordersWithTime.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+      averageTime: Math.round(averageTime),
+      totalCompleted: completedOrders.length,
+      totalPending: filteredKitchenOrders.filter(order => order.status === 'new').length
+    };
+  }, [filteredKitchenOrders]);
+
   const quickStats = useMemo(() => {
     const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
     const totalTransactions = filteredSales.length;
@@ -84,7 +137,6 @@ const Reports: React.FC = () => {
     };
   }, [filteredSales]);
 
-  // Processar dados para o gráfico de vendas por hora
   const salesByHour = React.useMemo(() => {
     const hourlyData = Array.from({ length: 24 }, (_, i) => ({
       hour: i,
@@ -97,11 +149,9 @@ const Reports: React.FC = () => {
       hourlyData[hour].total += sale.total;
     });
 
-    // Filtrar por range de horas
     return hourlyData.filter(data => data.hour >= hourRange.from && data.hour <= hourRange.to);
   }, [filteredSales, hourRange]);
 
-  // Processar dados para relatório de vendas por item
   const salesByItem = useMemo(() => {
     const itemSales: Record<string, { name: string; quantity: number; revenue: number; sales: number }> = {};
     
@@ -132,22 +182,40 @@ const Reports: React.FC = () => {
       ...data
     }));
 
-    // Filtrar por item selecionado
     if (selectedItemsFilter !== 'all') {
       result = result.filter(item => item.id === selectedItemsFilter);
     }
 
-    // Ordenar por receita (maior para menor)
     return result.sort((a, b) => b.revenue - a.revenue);
   }, [filteredSales, menuItems, selectedItemsFilter]);
 
-  // Gerar opções de horas para o select
   const hourOptions = Array.from({ length: 24 }, (_, i) => ({
     value: i,
     label: `${i.toString().padStart(2, '0')}:00`
   }));
 
-  // Exportar vendas por item em CSV
+  const exportKitchenCSV = () => {
+    const csvContent = [
+      ['Pedido', 'Criado em', 'Pronto em', 'Tempo (minutos)'],
+      ...kitchenStats.ordersWithTime.map(order => [
+        `#${order.orderNumber}`,
+        format(order.createdAt, 'dd/MM/yyyy HH:mm:ss'),
+        format(order.readyAt, 'dd/MM/yyyy HH:mm:ss'),
+        order.timeToReady.toString()
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `relatorio-cozinha-${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje'}-${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje'}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const exportItemSalesCSV = () => {
     const csvContent = [
       ['Item', 'Quantidade Vendida', 'Número de Vendas', 'Receita Total'],
@@ -170,7 +238,6 @@ const Reports: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // Exportar vendas por hora em CSV
   const exportHourSalesCSV = () => {
     const csvContent = [
       ['Hora', 'Total de Vendas'],
@@ -204,14 +271,12 @@ const Reports: React.FC = () => {
           <h1 className="text-3xl font-bold">Relatórios</h1>
         </div>
 
-        {/* Filtros Globais */}
         <Card>
           <CardHeader>
             <CardTitle>Filtros do Relatório</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Período de Data com Range */}
               <div className="space-y-3">
                 <label className="text-sm font-medium">Período de Data</label>
                 <Popover>
@@ -261,7 +326,6 @@ const Reports: React.FC = () => {
                 </Popover>
               </div>
 
-              {/* Período de Hora */}
               <div className="space-y-3">
                 <label className="text-sm font-medium">Período de Hora</label>
                 <div className="flex items-center gap-2">
@@ -298,7 +362,6 @@ const Reports: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Cards de Estatísticas Rápidas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -349,7 +412,94 @@ const Reports: React.FC = () => {
           </Card>
         </div>
 
-        {/* Relatório de Vendas por Item */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ChefHat className="h-5 w-5" />
+                  Relatório da Cozinha
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Período: {dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : 'N/A'} até {dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : 'N/A'} | 
+                  Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportKitchenCSV}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                CSV
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-sm text-blue-600 font-medium">Tempo Médio</div>
+                <div className="text-2xl font-bold text-blue-700">
+                  {kitchenStats.averageTime} min
+                </div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-sm text-green-600 font-medium">Pedidos Concluídos</div>
+                <div className="text-2xl font-bold text-green-700">
+                  {kitchenStats.totalCompleted}
+                </div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="text-sm text-orange-600 font-medium">Pedidos Pendentes</div>
+                <div className="text-2xl font-bold text-orange-700">
+                  {kitchenStats.totalPending}
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pedido</TableHead>
+                    <TableHead>Criado em</TableHead>
+                    <TableHead>Pronto em</TableHead>
+                    <TableHead className="text-right">Tempo (min)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {kitchenStats.ordersWithTime.length > 0 ? (
+                    kitchenStats.ordersWithTime.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+                        <TableCell>{format(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                        <TableCell>{format(order.readyAt, 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          <span className={cn(
+                            "px-2 py-1 rounded-full text-xs",
+                            order.timeToReady <= 10 ? "bg-green-100 text-green-800" :
+                            order.timeToReady <= 20 ? "bg-yellow-100 text-yellow-800" :
+                            "bg-red-100 text-red-800"
+                          )}>
+                            {order.timeToReady} min
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        Nenhum pedido concluído encontrado para os filtros selecionados
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
@@ -425,7 +575,6 @@ const Reports: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Gráfico de Vendas por Hora */}
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
