@@ -134,7 +134,7 @@ const AdminLayout: React.FC = () => {
                   <img src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">Painel Administrativo</h1>
+                  <h1 className="text-xl font-bold">Painel</h1>
                   <p className="text-sm text-gray-500">{profile?.name || user?.name || 'Hillsong Lounge'}</p>
                 </div>
               </div>
