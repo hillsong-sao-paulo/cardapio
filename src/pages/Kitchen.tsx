@@ -91,110 +91,113 @@ const Kitchen: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header da cozinha */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                <img 
-                  src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
-                  alt="Hillsong Logo" 
-                  className="w-full h-full object-cover"
-                />
+      {/* Container principal com largura de 1280px */}
+      <div className="max-w-[1280px] mx-auto">
+        {/* Header da cozinha */}
+        <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                  <img 
+                    src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
+                    alt="Hillsong Logo" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">🍴 Cozinha</h1>
+                  <p className="text-sm text-gray-500">
+                    Sistema de Pedidos - {new Date().toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">🍴 Cozinha</h1>
-                <p className="text-sm text-gray-500">
-                  Sistema de Pedidos - {new Date().toLocaleDateString('pt-BR')}
-                </p>
+              
+              <div className="flex items-center gap-4">
+                {/* Estatísticas rápidas */}
+                <div className="hidden md:flex items-center gap-3">
+                  <Badge variant="destructive" className="text-sm">
+                    {newOrdersCount} Novos
+                  </Badge>
+                  <Badge variant="default" className="text-sm bg-green-600">
+                    {readyOrdersCount} Prontos
+                  </Badge>
+                  <Badge variant="outline" className="text-sm">
+                    {totalOrders} Total
+                  </Badge>
+                </div>
+
+                {/* Controles */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="flex items-center gap-2"
+                  >
+                    {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    {soundEnabled ? 'Som On' : 'Som Off'}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetch()}
+                    disabled={isLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-              {/* Estatísticas rápidas */}
-              <div className="hidden md:flex items-center gap-3">
-                <Badge variant="destructive" className="text-sm">
-                  {newOrdersCount} Novos
-                </Badge>
-                <Badge variant="default" className="text-sm bg-green-600">
-                  {readyOrdersCount} Prontos
-                </Badge>
-                <Badge variant="outline" className="text-sm">
-                  {totalOrders} Total
-                </Badge>
-              </div>
 
-              {/* Controles */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="flex items-center gap-2"
-                >
-                  {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                  {soundEnabled ? 'Som On' : 'Som Off'}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                  disabled={isLoading}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
-              </div>
+            {/* Estatísticas mobile */}
+            <div className="md:hidden flex items-center gap-3 mt-3">
+              <Badge variant="destructive" className="text-sm">
+                {newOrdersCount} Novos
+              </Badge>
+              <Badge variant="default" className="text-sm bg-green-600">
+                {readyOrdersCount} Prontos
+              </Badge>
+              <Badge variant="outline" className="text-sm">
+                {totalOrders} Total
+              </Badge>
             </div>
           </div>
-
-          {/* Estatísticas mobile */}
-          <div className="md:hidden flex items-center gap-3 mt-3">
-            <Badge variant="destructive" className="text-sm">
-              {newOrdersCount} Novos
-            </Badge>
-            <Badge variant="default" className="text-sm bg-green-600">
-              {readyOrdersCount} Prontos
-            </Badge>
-            <Badge variant="outline" className="text-sm">
-              {totalOrders} Total
-            </Badge>
-          </div>
         </div>
-      </div>
 
-      {/* Conteúdo principal */}
-      <div className="p-6">
-        {totalOrders === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🍽️</div>
-            <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-              Nenhum pedido no momento
-            </h2>
-            <p className="text-gray-500">
-              Os novos pedidos aparecerão aqui automaticamente.
-            </p>
-          </div>
-        ) : (
-          <KanbanBoard orders={orders} />
-        )}
-      </div>
-
-      {/* Rodapé */}
-      <footer className="bg-white border-t border-gray-200 mt-8 py-4">
-        <div className="px-6">
-          <div className="flex items-center justify-center">
-            <img 
-              src="/lovable-uploads/397f96e7-0d6d-4eb1-a7f9-2d0c8fff89fd.png" 
-              alt="Hillsong São Paulo" 
-              className="h-6 opacity-60"
-            />
-          </div>
+        {/* Conteúdo principal */}
+        <div className="p-6">
+          {totalOrders === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🍽️</div>
+              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                Nenhum pedido no momento
+              </h2>
+              <p className="text-gray-500">
+                Os novos pedidos aparecerão aqui automaticamente.
+              </p>
+            </div>
+          ) : (
+            <KanbanBoard orders={orders} />
+          )}
         </div>
-      </footer>
+
+        {/* Rodapé */}
+        <footer className="bg-white border-t border-gray-200 mt-8 py-4">
+          <div className="px-6">
+            <div className="flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/397f96e7-0d6d-4eb1-a7f9-2d0c8fff89fd.png" 
+                alt="Hillsong São Paulo" 
+                className="h-6 opacity-60"
+              />
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };
