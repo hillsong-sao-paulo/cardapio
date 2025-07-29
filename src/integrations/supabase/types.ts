@@ -65,6 +65,86 @@ export type Database = {
         }
         Relationships: []
       }
+      kitchen_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          kitchen_order_id: string | null
+          menu_item_id: string | null
+          menu_item_name: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kitchen_order_id?: string | null
+          menu_item_id?: string | null
+          menu_item_name: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kitchen_order_id?: string | null
+          menu_item_id?: string | null
+          menu_item_name?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_order_items_kitchen_order_id_fkey"
+            columns: ["kitchen_order_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kitchen_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchen_orders: {
+        Row: {
+          created_at: string
+          id: string
+          order_number: number
+          ready_at: string | null
+          sale_id: string | null
+          status: string
+          total_items: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_number: number
+          ready_at?: string | null
+          sale_id?: string | null
+          status?: string
+          total_items?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_number?: number
+          ready_at?: string | null
+          sale_id?: string | null
+          status?: string
+          total_items?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_orders_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           category_id: string | null

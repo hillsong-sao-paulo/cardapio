@@ -1,3 +1,4 @@
+
 export interface Category {
   id: string;
   name: string;
@@ -32,6 +33,30 @@ export interface SaleItem {
   unit_price: number;
   subtotal: number;
   created_at: string;
+}
+
+export interface KitchenOrder {
+  id: string;
+  sale_id: string | null;
+  order_number: number;
+  status: 'new' | 'ready';
+  created_at: string;
+  ready_at: string | null;
+  total_items: number;
+}
+
+export interface KitchenOrderItem {
+  id: string;
+  kitchen_order_id: string;
+  menu_item_id: string | null;
+  menu_item_name: string;
+  quantity: number;
+  created_at: string;
+  menu_item?: MenuItem;
+}
+
+export interface KitchenOrderWithItems extends KitchenOrder {
+  kitchen_order_items: KitchenOrderItem[];
 }
 
 export interface MenuItemWithCategory extends MenuItem {
