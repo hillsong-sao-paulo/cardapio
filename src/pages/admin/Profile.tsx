@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +16,8 @@ import {
   FormLabel, 
   FormMessage 
 } from '@/components/ui/form';
-import { User, Mail, Lock, Save } from 'lucide-react';
+import { User, Mail, Lock, Save, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
 
 const profileSchema = z.object({
@@ -36,6 +36,7 @@ const passwordSchema = z.object({
 
 const Profile: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { profile, isLoading } = useProfile();
   const updateProfileMutation = useUpdateProfile();
   const changePasswordMutation = useChangePassword();
@@ -124,11 +125,22 @@ const Profile: React.FC = () => {
       />
       
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Perfil de Usuário</h1>
-          <p className="text-gray-600">
-            Gerencie suas informações pessoais e configurações de conta
-          </p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/admin')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar ao Dashboard
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Perfil de Usuário</h1>
+            <p className="text-gray-600">
+              Gerencie suas informações pessoais e configurações de conta
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
