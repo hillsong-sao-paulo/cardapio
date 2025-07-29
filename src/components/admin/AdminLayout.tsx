@@ -25,6 +25,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -33,6 +34,7 @@ const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
 
   const handleLogout = async () => {
@@ -114,7 +116,7 @@ const AdminLayout: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg font-bold">Admin Panel</h2>
-            <p className="text-sm text-gray-500">Hillsong Lounge</p>
+            <p className="text-sm text-gray-500">{profile?.name || user?.name || 'Hillsong Lounge'}</p>
           </div>
         </div>
       </div>
@@ -191,7 +193,7 @@ const AdminLayout: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold">Admin Panel</h1>
-                  <p className="text-sm text-gray-500">Hillsong Lounge</p>
+                  <p className="text-sm text-gray-500">{profile?.name || user?.name || 'Hillsong Lounge'}</p>
                 </div>
               </div>
 
