@@ -52,29 +52,52 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     if (cartItems.length === 0) return null;
 
     return (
-      <div className={`fixed bottom-0 left-0 right-0 z-50 p-4 pb-4 transition-transform duration-300 ${
-        isMinimized ? 'translate-y-20' : 'translate-y-0'
-      }`}>
-        <div className="bg-app-blue/95 backdrop-blur-sm border border-app-blue shadow-lg rounded-[20px] mx-4">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white font-sf">
-                  {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-                </p>
-                <p className="text-lg font-bold text-white font-sf">
-                  R$ {totalValue.toFixed(2)}
-                </p>
-              </div>
-              
+      <div className="fixed bottom-4 right-4 z-50">
+        <div className={`transition-all duration-300 ease-in-out ${
+          isMinimized ? 'scale-90' : 'scale-100'
+        }`}>
+          {isMinimized ? (
+            // Estado minimizado - apenas ícone do carrinho
+            <div className="relative">
               <Button
                 onClick={() => onOpenChange(true)}
-                className="bg-white text-app-blue hover:bg-gray-100 font-sf"
+                className="w-14 h-14 rounded-full bg-app-blue hover:bg-app-blue-hover text-white shadow-lg"
+                size="icon"
               >
-                <ShoppingCart className="w-4 h-4" />
+                <ShoppingCart className="w-6 h-6" />
               </Button>
+              {/* Badge com quantidade */}
+              {totalItems > 0 && (
+                <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
+                  {totalItems > 99 ? '99+' : totalItems}
+                </Badge>
+              )}
             </div>
-          </div>
+          ) : (
+            // Estado expandido - informações completas
+            <div className="bg-white border border-gray-200 shadow-lg rounded-2xl min-w-[280px] max-w-sm">
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 font-sf">
+                      {totalItems} {totalItems === 1 ? 'item' : 'itens'}
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 font-sf">
+                      R$ {totalValue.toFixed(2)}
+                    </p>
+                  </div>
+                  
+                  <Button
+                    onClick={() => onOpenChange(true)}
+                    className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Ver Carrinho
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
