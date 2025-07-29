@@ -56,13 +56,14 @@ export const useCreateKitchenOrder = () => {
         quantity: number;
       }>;
     }) => {
-      // Criar o pedido da cozinha (order_number é gerado automaticamente pelo trigger)
+      // Criar o pedido da cozinha sem order_number (gerado pelo trigger)
       const { data: kitchenOrder, error: orderError } = await supabase
         .from('kitchen_orders')
-        .insert({ 
+        .insert({
           sale_id: orderData.sale_id,
-          total_items: orderData.total_items 
-        })
+          total_items: orderData.total_items,
+          status: 'new'
+        } as any)
         .select()
         .single();
       
