@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
@@ -16,7 +17,19 @@ const OrdersDisplay: React.FC = () => {
   }, []);
 
   const newOrders = orders.filter(order => order.status === 'new');
-  const readyOrders = orders.filter(order => order.status === 'ready');
+  
+  // Filter ready orders to hide after 2 minutes
+  const readyOrders = orders.filter(order => {
+    if (order.status !== 'ready') return false;
+    
+    if (order.ready_at) {
+      const readyTime = new Date(order.ready_at);
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+      return readyTime > twoMinutesAgo;
+    }
+    
+    return true;
+  });
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('pt-BR', {
@@ -64,22 +77,24 @@ const OrdersDisplay: React.FC = () => {
             <h2 className="text-3xl font-bold">Preparando...</h2>
           </div>
           
-          <div className="px-8 py-6 space-y-6">
+          <div className="px-8 py-6">
             {newOrders.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-2xl text-gray-300">Nenhum pedido em preparo</p>
               </div>
             ) : (
-              newOrders.map(order => (
-                <div
-                  key={order.id}
-                  className="text-center py-8"
-                >
-                  <span className="text-8xl font-bold text-white">
-                    {order.order_number.toString().padStart(3, '0')}
-                  </span>
-                </div>
-              ))
+              <div className="grid grid-cols-2 gap-6">
+                {newOrders.map(order => (
+                  <div
+                    key={order.id}
+                    className="text-center py-3"
+                  >
+                    <span className="text-6xl font-bold text-white">
+                      {order.order_number.toString().padStart(3, '0')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -90,22 +105,24 @@ const OrdersDisplay: React.FC = () => {
             <h2 className="text-3xl font-bold">Pronto - Retire</h2>
           </div>
           
-          <div className="px-8 py-6 space-y-6">
+          <div className="px-8 py-6">
             {readyOrders.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-2xl text-green-100">Nenhum pedido pronto</p>
               </div>
             ) : (
-              readyOrders.map(order => (
-                <div
-                  key={order.id}
-                  className="text-center py-8"
-                >
-                  <span className="text-8xl font-bold text-white">
-                    {order.order_number.toString().padStart(3, '0')}
-                  </span>
-                </div>
-              ))
+              <div className="grid grid-cols-2 gap-6">
+                {readyOrders.map(order => (
+                  <div
+                    key={order.id}
+                    className="text-center py-3"
+                  >
+                    <span className="text-6xl font-bold text-white">
+                      {order.order_number.toString().padStart(3, '0')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
