@@ -10,6 +10,7 @@ import { HelmetProvider } from 'react-helmet-async';
 const Index = lazy(() => import('./pages/Index'));
 const Auth = lazy(() => import('./pages/Auth'));
 const Kitchen = lazy(() => import('./pages/Kitchen'));
+const OrdersScreen = lazy(() => import('./pages/OrdersScreen'));
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const Categories = lazy(() => import('./pages/admin/Categories'));
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/kitchen" element={<Kitchen />} />
+              <Route path="/orders-screen" element={<OrdersScreen />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="categories" element={<Categories />} />
