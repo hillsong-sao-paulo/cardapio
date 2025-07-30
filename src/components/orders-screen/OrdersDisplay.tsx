@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
-import OrderDisplayCard from './OrderDisplayCard';
 
 const OrdersDisplay: React.FC = () => {
   const { data: orders = [], isLoading } = useKitchenOrders();
@@ -37,7 +36,7 @@ const OrdersDisplay: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-gray-300">
       {/* Header */}
       <header className="bg-white border-b-2 border-gray-200 px-8 py-6">
         <div className="flex justify-between items-center">
@@ -59,60 +58,60 @@ const OrdersDisplay: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
-        {/* New Orders Column */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Preparando
-            </h2>
-            <div className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full font-bold text-lg">
-              {newOrders.length}
-            </div>
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0">
+        {/* Preparing Orders Column */}
+        <div className="bg-gray-700 text-white">
+          <div className="text-center py-6 bg-gray-800">
+            <h2 className="text-3xl font-bold">Preparando...</h2>
           </div>
           
-          <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto">
-            {newOrders.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-4xl">🍽️</span>
+          <div className="px-8 py-6">
+            <div className="grid grid-cols-3 gap-4">
+              {newOrders.length === 0 ? (
+                <div className="col-span-3 text-center py-16">
+                  <p className="text-2xl text-gray-300">Nenhum pedido em preparo</p>
                 </div>
-                <p className="text-xl text-gray-600">Nenhum pedido em preparo</p>
-              </div>
-            ) : (
-              newOrders.map(order => (
-                <OrderDisplayCard key={order.id} order={order} />
-              ))
-            )}
+              ) : (
+                newOrders.map(order => (
+                  <div
+                    key={order.id}
+                    className="text-center py-4"
+                  >
+                    <span className="text-4xl font-bold text-white">
+                      {order.order_number.toString().padStart(3, '0')}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
         {/* Ready Orders Column */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Pronto para Retirada
-            </h2>
-            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-bold text-lg">
-              {readyOrders.length}
-            </div>
+        <div className="bg-green-600 text-white">
+          <div className="text-center py-6 bg-green-700">
+            <h2 className="text-3xl font-bold">Pronto - Retire</h2>
           </div>
           
-          <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto">
-            {readyOrders.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-4xl">✅</span>
+          <div className="px-8 py-6">
+            <div className="grid grid-cols-3 gap-4">
+              {readyOrders.length === 0 ? (
+                <div className="col-span-3 text-center py-16">
+                  <p className="text-2xl text-green-100">Nenhum pedido pronto</p>
                 </div>
-                <p className="text-xl text-gray-600">Nenhum pedido pronto</p>
-              </div>
-            ) : (
-              readyOrders.map(order => (
-                <OrderDisplayCard key={order.id} order={order} />
-              ))
-            )}
+              ) : (
+                readyOrders.map(order => (
+                  <div
+                    key={order.id}
+                    className="text-center py-4"
+                  >
+                    <span className="text-4xl font-bold text-white">
+                      {order.order_number.toString().padStart(3, '0')}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </main>
