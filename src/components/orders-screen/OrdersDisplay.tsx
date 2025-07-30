@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
@@ -89,7 +88,7 @@ const OrdersDisplay: React.FC = () => {
                     key={order.id}
                     className="text-center py-3"
                   >
-                    <span className="text-6xl font-bold text-white">
+                    <span className="text-8xl font-bold text-white">
                       {order.order_number.toString().padStart(3, '0')}
                     </span>
                   </div>
@@ -117,7 +116,7 @@ const OrdersDisplay: React.FC = () => {
                     key={order.id}
                     className="text-center py-3"
                   >
-                    <span className="text-6xl font-bold text-white">
+                    <span className="text-8xl font-bold text-white">
                       {order.order_number.toString().padStart(3, '0')}
                     </span>
                   </div>
