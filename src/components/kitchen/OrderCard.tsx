@@ -20,9 +20,9 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
     const created = new Date(order.created_at);
     const diffInMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
     
-    if (diffInMinutes < 1) return 'Agora mesmo';
-    if (diffInMinutes === 1) return '1 minuto';
-    return `${diffInMinutes} minutos`;
+    if (diffInMinutes < 1) return 'Agora';
+    if (diffInMinutes === 1) return '1min';
+    return `${diffInMinutes}min`;
   };
 
   const getTimeColor = () => {
@@ -60,23 +60,17 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      {/* Header do Card */}
-      <div className="px-5 py-4 bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-100">
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">#{order.order_number}</span>
+    <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+      {/* Header Compacto */}
+      <div className="px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-100">
+        <div className="flex justify-between items-center mb-1">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xs">#{order.order_number}</span>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                Pedido #{order.order_number}
-              </h3>
-              <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getTimeColor()}`}>
-                <Clock className="w-3 h-3 mr-1" />
-                {getElapsedTime()}
-              </div>
-            </div>
+            <h3 className="text-sm font-bold text-gray-900">
+              #{order.order_number}
+            </h3>
           </div>
           
           <Badge 
@@ -85,78 +79,78 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
               order.status === 'new' 
                 ? 'bg-red-100 text-red-700 border-red-200' 
                 : 'bg-green-100 text-green-700 border-green-200'
-            } font-semibold px-3 py-1`}
+            } text-xs px-2 py-0.5`}
           >
             {order.status === 'new' ? 'Novo' : 'Pronto'}
           </Badge>
         </div>
         
-        <div className="flex items-center gap-4 text-xs text-gray-500">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span>Pedido às {formatTime(order.created_at)}</span>
+        <div className="flex items-center justify-between text-xs">
+          <div className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getTimeColor()}`}>
+            <Clock className="w-2.5 h-2.5 mr-1" />
+            {getElapsedTime()}
           </div>
-          {order.ready_at && (
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="w-3 h-3 text-green-600" />
-              <span>Pronto às {formatTime(order.ready_at)}</span>
-            </div>
-          )}
+          
+          <div className="text-xs text-gray-500">
+            {formatTime(order.created_at)}
+          </div>
         </div>
       </div>
 
-      {/* Conteúdo do Card */}
-      <div className="p-5">
-        {/* Lista de Itens */}
-        <div className="space-y-3 mb-5">
+      {/* Conteúdo Compacto */}
+      <div className="p-3">
+        {/* Lista de Itens Condensada */}
+        <div className="space-y-1.5 mb-3">
           {order.kitchen_order_items.map((item) => (
-            <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <div className="flex-1">
-                <span className="font-semibold text-gray-900">{item.menu_item_name}</span>
+            <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium text-gray-900 truncate block">
+                  {item.menu_item_name}
+                </span>
               </div>
-              <div className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-bold text-sm">
+              <div className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold text-xs ml-2">
                 {item.quantity}x
               </div>
             </div>
           ))}
         </div>
 
-        {/* Total de Itens */}
-        <div className="flex justify-center mb-5">
-          <div className="bg-gray-100 px-4 py-2 rounded-full">
-            <span className="text-sm font-semibold text-gray-700">
-              Total: {order.total_items} {order.total_items === 1 ? 'item' : 'itens'}
+        {/* Total Compacto */}
+        <div className="flex justify-center mb-3">
+          <div className="bg-gray-100 px-2 py-1 rounded-md">
+            <span className="text-xs font-medium text-gray-700">
+              {order.total_items} {order.total_items === 1 ? 'item' : 'itens'}
             </span>
           </div>
         </div>
 
-        {/* Botão de Ação */}
+        {/* Botão Compacto */}
         {order.status === 'new' && (
           <Button 
             onClick={handleMarkAsReady}
             disabled={updateStatus.isPending}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3.5 rounded-xl"
-            size="lg"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 rounded-md text-xs"
+            size="sm"
           >
             {updateStatus.isPending ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></div>
                 Atualizando...
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                Marcar como Pronto
+              <div className="flex items-center gap-1.5">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Marcar Pronto
               </div>
             )}
           </Button>
         )}
 
         {order.status === 'ready' && (
-          <div className="text-center py-3">
-            <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-xl font-semibold">
-              <CheckCircle className="w-5 h-5" />
-              Pedido Pronto
+          <div className="text-center py-1">
+            <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-md text-xs font-medium">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Pronto
             </div>
           </div>
         )}
