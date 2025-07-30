@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
 import KanbanBoard from '@/components/kitchen/KanbanBoard';
@@ -5,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 const Kitchen: React.FC = () => {
   const {
     data: orders = [],
@@ -64,20 +66,26 @@ const Kitchen: React.FC = () => {
     }
     setLastOrderCount(newOrdersCount);
   }, [orders, lastOrderCount, soundEnabled]);
+
   const newOrdersCount = orders.filter(order => order.status === 'new').length;
   const readyOrdersCount = orders.filter(order => order.status === 'ready').length;
   const totalOrders = orders.length;
+
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Carregando pedidos da cozinha...</p>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen bg-gray-50">
-      {/* Container principal com largura de 1280px */}
-      <div className="max-w-[1280px] mx-auto">
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Container principal com full-width */}
+      <div className="w-full">
         {/* Header da cozinha */}
         <div className="bg-white shadow-sm border-b sticky top-0 z-10">
           <div className="px-6 py-4">
@@ -88,15 +96,12 @@ const Kitchen: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Cozinha</h1>
-                  <p className="text-sm text-gray-500">
-                    Sistema de Pedidos - {new Date().toLocaleDateString('pt-BR')}
-                  </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-4">
-                {/* Estatísticas rápidas */}
-                <div className="hidden md:flex items-center gap-3">
+                {/* Estatísticas */}
+                <div className="flex items-center gap-3">
                   <Badge variant="destructive" className="text-sm">
                     {newOrdersCount} Novos
                   </Badge>
@@ -108,39 +113,36 @@ const Kitchen: React.FC = () => {
                   </Badge>
                 </div>
 
-                {/* Controles */}
+                {/* Controles - apenas ícones */}
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSoundEnabled(!soundEnabled)} className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSoundEnabled(!soundEnabled)} 
+                    className="p-2"
+                  >
                     {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                    {soundEnabled ? 'Som On' : 'Som Off'}
                   </Button>
                   
-                  <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading} className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => refetch()} 
+                    disabled={isLoading}
+                    className="p-2"
+                  >
                     <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    Atualizar
                   </Button>
                 </div>
               </div>
-            </div>
-
-            {/* Estatísticas mobile */}
-            <div className="md:hidden flex items-center gap-3 mt-3">
-              <Badge variant="destructive" className="text-sm">
-                {newOrdersCount} Novos
-              </Badge>
-              <Badge variant="default" className="text-sm bg-green-600">
-                {readyOrdersCount} Prontos
-              </Badge>
-              <Badge variant="outline" className="text-sm">
-                {totalOrders} Total
-              </Badge>
             </div>
           </div>
         </div>
 
         {/* Conteúdo principal */}
         <div className="p-6">
-          {totalOrders === 0 ? <div className="text-center py-16">
+          {totalOrders === 0 ? (
+            <div className="text-center py-16">
               <div className="text-6xl mb-4">🍽️</div>
               <h2 className="text-2xl font-semibold text-gray-700 mb-2">
                 Nenhum pedido no momento
@@ -148,7 +150,10 @@ const Kitchen: React.FC = () => {
               <p className="text-gray-500">
                 Os novos pedidos aparecerão aqui automaticamente.
               </p>
-            </div> : <KanbanBoard orders={orders} />}
+            </div>
+          ) : (
+            <KanbanBoard orders={orders} />
+          )}
         </div>
 
         {/* Rodapé */}
@@ -160,6 +165,8 @@ const Kitchen: React.FC = () => {
           </div>
         </footer>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Kitchen;
