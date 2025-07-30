@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import OrderCard from './OrderCard';
 import { KitchenOrderWithItems } from '@/types/database';
 
@@ -35,7 +33,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ orders }) => {
           </div>
         </div>
         
-        <div className="p-3 overflow-y-auto max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-160px)]">
+        <div className="p-2 overflow-y-auto max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-160px)]">
           {newOrders.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
@@ -49,7 +47,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ orders }) => {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {newOrders.map(order => (
                 <OrderCard key={order.id} order={order} />
               ))}
@@ -78,7 +76,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ orders }) => {
           </div>
         </div>
         
-        <div className="p-3 overflow-y-auto max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-160px)]">
+        <div className="p-2 overflow-y-auto max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-160px)]">
           {readyOrders.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
@@ -92,7 +90,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ orders }) => {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {readyOrders.map(order => (
                 <OrderCard key={order.id} order={order} />
               ))}

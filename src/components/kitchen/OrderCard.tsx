@@ -25,6 +25,16 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
     return `${diffInMinutes}min`;
   };
 
+  const getDeliveryDuration = () => {
+    if (!order.ready_at) return '';
+    const created = new Date(order.created_at);
+    const ready = new Date(order.ready_at);
+    const diffInMinutes = Math.floor((ready.getTime() - created.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return '< 1min';
+    return `${diffInMinutes}min`;
+  };
+
   const getTimeColor = () => {
     const now = new Date();
     const created = new Date(order.created_at);
@@ -59,101 +69,101 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
     });
   };
 
-  return (
-    <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
-      {/* Header Compacto */}
-      <div className="px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-100">
-        <div className="flex justify-between items-center mb-1">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+  if (order.status === 'new') {
+    return (
+      <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+        {/* Header - Novos Pedidos */}
+        <div className="px-2 py-1.5 bg-gradient-to-r from-red-50 to-red-100/50 border-b border-red-100">
+          <div className="flex justify-between items-center mb-1">
+            <div className="w-5 h-5 bg-gradient-to-r from-red-500 to-red-600 rounded flex items-center justify-center">
               <span className="text-white font-bold text-xs">#{order.order_number}</span>
             </div>
-            <h3 className="text-sm font-bold text-gray-900">
-              #{order.order_number}
-            </h3>
+            
+            <div className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getTimeColor()}`}>
+              <Clock className="w-2.5 h-2.5 mr-1" />
+              {getElapsedTime()}
+            </div>
           </div>
           
-          <Badge 
-            variant={order.status === 'new' ? 'destructive' : 'default'}
-            className={`${
-              order.status === 'new' 
-                ? 'bg-red-100 text-red-700 border-red-200' 
-                : 'bg-green-100 text-green-700 border-green-200'
-            } text-xs px-2 py-0.5`}
-          >
-            {order.status === 'new' ? 'Novo' : 'Pronto'}
-          </Badge>
-        </div>
-        
-        <div className="flex items-center justify-between text-xs">
-          <div className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getTimeColor()}`}>
-            <Clock className="w-2.5 h-2.5 mr-1" />
-            {getElapsedTime()}
-          </div>
-          
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-600 text-center">
             {formatTime(order.created_at)}
           </div>
         </div>
-      </div>
 
-      {/* Conteúdo Compacto */}
-      <div className="p-3">
-        {/* Lista de Itens Condensada */}
-        <div className="space-y-1.5 mb-3">
-          {order.kitchen_order_items.map((item) => (
-            <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-              <div className="flex-1 min-w-0">
-                <span className="text-xs font-medium text-gray-900 truncate block">
+        {/* Conteúdo - Novos Pedidos */}
+        <div className="p-2">
+          {/* Lista de Itens */}
+          <div className="space-y-1 mb-2">
+            {order.kitchen_order_items.map((item) => (
+              <div key={item.id} className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs">
+                <span className="font-medium text-gray-900 truncate flex-1 mr-2">
                   {item.menu_item_name}
                 </span>
+                <div className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold text-xs">
+                  {item.quantity}x
+                </div>
               </div>
-              <div className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold text-xs ml-2">
+            ))}
+          </div>
+
+          {/* Botão */}
+          <Button 
+            onClick={handleMarkAsReady}
+            disabled={updateStatus.isPending}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-1.5 rounded text-xs h-auto"
+          >
+            {updateStatus.isPending ? (
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                Atualizando...
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Marcar Pronto
+              </div>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Pedidos Prontos
+  return (
+    <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+      {/* Header - Pedidos Prontos */}
+      <div className="px-2 py-1.5 bg-gradient-to-r from-green-50 to-green-100/50 border-b border-green-100">
+        <div className="flex justify-between items-center mb-1">
+          <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-green-600 rounded flex items-center justify-center">
+            <span className="text-white font-bold text-xs">#{order.order_number}</span>
+          </div>
+          
+          <div className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-medium">
+            {getDeliveryDuration()}
+          </div>
+        </div>
+        
+        <div className="text-xs text-gray-600 text-center">
+          {formatTime(order.created_at)} → {order.ready_at ? formatTime(order.ready_at) : ''}
+        </div>
+      </div>
+
+      {/* Conteúdo - Pedidos Prontos */}
+      <div className="p-2">
+        {/* Lista de Itens */}
+        <div className="space-y-1">
+          {order.kitchen_order_items.map((item) => (
+            <div key={item.id} className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs">
+              <span className="font-medium text-gray-900 truncate flex-1 mr-2">
+                {item.menu_item_name}
+              </span>
+              <div className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold text-xs">
                 {item.quantity}x
               </div>
             </div>
           ))}
         </div>
-
-        {/* Total Compacto */}
-        <div className="flex justify-center mb-3">
-          <div className="bg-gray-100 px-2 py-1 rounded-md">
-            <span className="text-xs font-medium text-gray-700">
-              {order.total_items} {order.total_items === 1 ? 'item' : 'itens'}
-            </span>
-          </div>
-        </div>
-
-        {/* Botão Compacto */}
-        {order.status === 'new' && (
-          <Button 
-            onClick={handleMarkAsReady}
-            disabled={updateStatus.isPending}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 rounded-md text-xs"
-            size="sm"
-          >
-            {updateStatus.isPending ? (
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></div>
-                Atualizando...
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5" />
-                Marcar Pronto
-              </div>
-            )}
-          </Button>
-        )}
-
-        {order.status === 'ready' && (
-          <div className="text-center py-1">
-            <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-md text-xs font-medium">
-              <CheckCircle className="w-3.5 h-3.5" />
-              Pronto
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
