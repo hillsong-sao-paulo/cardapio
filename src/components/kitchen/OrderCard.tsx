@@ -60,12 +60,12 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-900/5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/10 hover:-translate-y-1">
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       {/* Header do Card */}
       <div className="px-5 py-4 bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-100">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">#{order.order_number}</span>
             </div>
             <div>
@@ -83,8 +83,8 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
             variant={order.status === 'new' ? 'destructive' : 'default'}
             className={`${
               order.status === 'new' 
-                ? 'bg-red-100 text-red-700 border-red-200 shadow-sm' 
-                : 'bg-green-100 text-green-700 border-green-200 shadow-sm'
+                ? 'bg-red-100 text-red-700 border-red-200' 
+                : 'bg-green-100 text-green-700 border-green-200'
             } font-semibold px-3 py-1`}
           >
             {order.status === 'new' ? 'Novo' : 'Pronto'}
@@ -114,7 +114,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
               <div className="flex-1">
                 <span className="font-semibold text-gray-900">{item.menu_item_name}</span>
               </div>
-              <div className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-bold text-sm shadow-sm">
+              <div className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-bold text-sm">
                 {item.quantity}x
               </div>
             </div>
@@ -135,7 +135,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
           <Button 
             onClick={handleMarkAsReady}
             disabled={updateStatus.isPending}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3.5 rounded-xl"
             size="lg"
           >
             {updateStatus.isPending ? (
@@ -154,7 +154,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
 
         {order.status === 'ready' && (
           <div className="text-center py-3">
-            <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-xl font-semibold shadow-sm">
+            <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-xl font-semibold">
               <CheckCircle className="w-5 h-5" />
               Pedido Pronto
             </div>

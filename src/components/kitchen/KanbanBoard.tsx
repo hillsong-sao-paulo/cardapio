@@ -16,18 +16,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ orders }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
       {/* Coluna Novos Pedidos */}
-      <div className="bg-white rounded-3xl shadow-xl shadow-red-500/10 border border-red-100 overflow-hidden backdrop-blur-xl">
+      <div className="bg-white rounded-3xl border border-red-100 overflow-hidden">
         <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <span className="text-white text-lg">🔥</span>
               </div>
               <h2 className="text-xl font-bold text-white tracking-tight">
                 Novos Pedidos
               </h2>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+            <div className="bg-white/20 rounded-full px-3 py-1.5 border border-white/30">
               <span className="text-white font-semibold text-sm">
                 {newOrders.length}
               </span>
@@ -59,18 +59,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ orders }) => {
       </div>
 
       {/* Coluna Pedidos Prontos */}
-      <div className="bg-white rounded-3xl shadow-xl shadow-green-500/10 border border-green-100 overflow-hidden backdrop-blur-xl">
+      <div className="bg-white rounded-3xl border border-green-100 overflow-hidden">
         <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <span className="text-white text-lg">✅</span>
               </div>
               <h2 className="text-xl font-bold text-white tracking-tight">
                 Pedidos Prontos
               </h2>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+            <div className="bg-white/20 rounded-full px-3 py-1.5 border border-white/30">
               <span className="text-white font-semibold text-sm">
                 {readyOrders.length}
               </span>
