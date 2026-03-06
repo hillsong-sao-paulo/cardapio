@@ -62,7 +62,15 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/a7840016-77ce-4604-a775-7cc31db8e854) and click on Share -> Publish.
+**Vercel (recomendado)**  
+1. Acesse [vercel.com](https://vercel.com) e faça login (pode usar conta GitHub).  
+2. **Add New…** → **Project** → importe o repositório `hillsong-sao-paulo/cardapio`.  
+3. Deixe o build como está: **Build Command** `npm run build`, **Output Directory** `dist`.  
+4. Clique em **Deploy**.  
+Os próximos pushes na branch `main` gerarão deploys automáticos.
+
+**Lovable**  
+Você também pode abrir [Lovable](https://lovable.dev/projects/a7840016-77ce-4604-a775-7cc31db8e854) e usar Share → Publish.
 
 ## Can I connect a custom domain to my Lovable project?
 
