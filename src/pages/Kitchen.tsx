@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
 import KanbanBoard from '@/components/kitchen/KanbanBoard';
-import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,16 +15,14 @@ const Kitchen: React.FC = () => {
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Som de notificação para novos pedidos
   const playNotificationSound = () => {
     if (soundEnabled) {
-      // Cria um beep simples usando Web Audio API
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      oscillator.frequency.value = 800; // Frequência do beep
+      oscillator.frequency.value = 800;
       oscillator.type = 'sine';
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.01);
@@ -35,30 +32,7 @@ const Kitchen: React.FC = () => {
     }
   };
 
-  // Configurar realtime updates
-  useEffect(() => {
-    const channel = supabase.channel('kitchen-updates').on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'kitchen_orders'
-    }, payload => {
-      console.log('Novo pedido na cozinha:', payload);
-      playNotificationSound();
-      refetch();
-    }).on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'kitchen_orders'
-    }, payload => {
-      console.log('Pedido atualizado:', payload);
-      refetch();
-    }).subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refetch, soundEnabled]);
-
-  // Detectar novos pedidos para tocar som
+  // Detectar novos pedidos ao atualizar dados (polling a cada 5s em useKitchenOrders)
   useEffect(() => {
     const newOrdersCount = orders.filter(order => order.status === 'new').length;
     if (lastOrderCount > 0 && newOrdersCount > lastOrderCount) {

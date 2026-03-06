@@ -1,32 +1,44 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  nocodbList,
+  nocodbCreate,
+  nocodbUpdate,
+  nocodbDelete,
+  nocodbGetById,
+  nocodbHasTable,
+} from '@/lib/nocodb';
 import { Sale, SaleWithItems, SaleItem, MenuItem } from '@/types/database';
 
 export const useSales = () => {
   return useQuery({
     queryKey: ['sales'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sales')
-        .select(`
-          *,
-          sale_items (
-            *,
-            menu_item:menu_items (*)
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as SaleWithItems[];
+      const [sales, saleItems, menuItems] = await Promise.all([
+        nocodbList<Sale>('sales', { sort: '-created_at' }),
+        nocodbList<SaleItem>('sale_items', {}),
+        nocodbList<MenuItem>('menu_items', {}),
+      ]);
+      const menuMap = new Map(menuItems.map((m) => [m.id, m]));
+      const itemsBySale = new Map<string, (SaleItem & { menu_item: MenuItem })[]>();
+      for (const si of saleItems) {
+        const list = itemsBySale.get(si.sale_id) ?? [];
+        list.push({ ...si, menu_item: menuMap.get(si.menu_item_id)! });
+        itemsBySale.set(si.sale_id, list);
+      }
+      const withItems: SaleWithItems[] = sales.map((s) => ({
+        ...s,
+        sale_items: (itemsBySale.get(s.id) ?? []).sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        ),
+      }));
+      return withItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 };
 
 export const useCreateSale = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (saleData: {
       total: number;
@@ -37,114 +49,70 @@ export const useCreateSale = () => {
         subtotal: number;
       }>;
     }) => {
-      // Create the sale
-      const { data: sale, error: saleError } = await supabase
-        .from('sales')
-        .insert([{ total: saleData.total }])
-        .select()
-        .single();
-      
-      if (saleError) throw saleError;
-
-      // Create sale items
-      const saleItems = saleData.items.map(item => ({
+      const saleId = crypto.randomUUID();
+      const sale = await nocodbCreate<Sale>('sales', { id: saleId, total: saleData.total });
+      const saleItems = saleData.items.map((item) => ({
+        id: crypto.randomUUID(),
         sale_id: sale.id,
         menu_item_id: item.menu_item_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
         subtotal: item.subtotal,
       }));
-
-      const { error: itemsError } = await supabase
-        .from('sale_items')
-        .insert(saleItems);
-      
-      if (itemsError) throw itemsError;
-
-      // Update stock for each item - CORRIGIDO: subtrair quantidade do estoque atual
-      for (const item of saleData.items) {
-        // Primeiro, buscar o estoque atual
-        const { data: currentItem, error: fetchError } = await supabase
-          .from('menu_items')
-          .select('stock')
-          .eq('id', item.menu_item_id)
-          .single();
-        
-        if (fetchError) throw fetchError;
-
-        // Verificar se há estoque suficiente
-        if (currentItem.stock < item.quantity) {
-          throw new Error(`Estoque insuficiente para o item. Disponível: ${currentItem.stock}, Solicitado: ${item.quantity}`);
-        }
-
-        // Subtrair a quantidade vendida do estoque atual
-        const newStock = currentItem.stock - item.quantity;
-        
-        const { error: stockError } = await supabase
-          .from('menu_items')
-          .update({ 
-            stock: newStock,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', item.menu_item_id);
-        
-        if (stockError) throw stockError;
+      for (const item of saleItems) {
+        await nocodbCreate('sale_items', item);
       }
 
-      // Criar pedido na cozinha automaticamente
-      try {
-        // Buscar nomes dos itens para o pedido da cozinha
-        const menuItemIds = saleData.items.map(item => item.menu_item_id);
-        const { data: menuItems, error: menuError } = await supabase
-          .from('menu_items')
-          .select('id, name')
-          .in('id', menuItemIds);
-        
-        if (menuError) throw menuError;
-
-        // Preparar dados do pedido da cozinha
-        const kitchenOrderItems = saleData.items.map(item => {
-          const menuItem = menuItems.find(mi => mi.id === item.menu_item_id);
-          return {
-            menu_item_id: item.menu_item_id,
-            menu_item_name: menuItem?.name || 'Item não encontrado',
-            quantity: item.quantity,
-          };
+      for (const item of saleData.items) {
+        const currentItem = await nocodbGetById<{ stock: number }>('menu_items', item.menu_item_id);
+        if (!currentItem) throw new Error('Item do cardápio não encontrado');
+        if (currentItem.stock < item.quantity) {
+          throw new Error(
+            `Estoque insuficiente para o item. Disponível: ${currentItem.stock}, Solicitado: ${item.quantity}`
+          );
+        }
+        const newStock = currentItem.stock - item.quantity;
+        await nocodbUpdate('menu_items', item.menu_item_id, {
+          stock: newStock,
+          updated_at: new Date().toISOString(),
         });
+      }
 
-        const totalItems = saleData.items.reduce((sum, item) => sum + item.quantity, 0);
-
-        // Criar pedido da cozinha sem order_number (gerado pelo trigger)
-        const { data: kitchenOrder, error: kitchenError } = await supabase
-          .from('kitchen_orders')
-          .insert({
+      if (nocodbHasTable('kitchen_orders')) {
+        try {
+          const menuItemIds = saleData.items.map((i) => i.menu_item_id);
+          const menuItems = await Promise.all(
+            menuItemIds.map((id) => nocodbGetById<{ id: string; name: string }>('menu_items', id))
+          );
+          const menuMap = new Map(menuItems.filter(Boolean).map((m) => [m!.id, m!]));
+          const kitchenOrderItems = saleData.items.map((item) => ({
+            menu_item_id: item.menu_item_id,
+            menu_item_name: menuMap.get(item.menu_item_id)?.name ?? 'Item não encontrado',
+            quantity: item.quantity,
+          }));
+          const totalItems = saleData.items.reduce((sum, item) => sum + item.quantity, 0);
+          const existing = await nocodbList<{ order_number?: number }>('kitchen_orders', { limit: 1000 });
+          const maxNum = existing.length ? Math.max(...existing.map((o) => o.order_number ?? 0)) : 0;
+          const koId = crypto.randomUUID();
+          const kitchenOrder = await nocodbCreate('kitchen_orders', {
+            id: koId,
             sale_id: sale.id,
             total_items: totalItems,
-            status: 'new'
-          } as any)
-          .select()
-          .single();
-        
-        if (kitchenError) throw kitchenError;
-
-        // Criar itens do pedido da cozinha
-        const kitchenOrderItemsData = kitchenOrderItems.map(item => ({
-          kitchen_order_id: kitchenOrder.id,
-          menu_item_id: item.menu_item_id,
-          menu_item_name: item.menu_item_name,
-          quantity: item.quantity,
-        }));
-
-        const { error: kitchenItemsError } = await supabase
-          .from('kitchen_order_items')
-          .insert(kitchenOrderItemsData);
-        
-        if (kitchenItemsError) throw kitchenItemsError;
-
-        console.log('Pedido da cozinha criado automaticamente:', kitchenOrder);
-      } catch (kitchenError) {
-        console.error('Erro ao criar pedido da cozinha:', kitchenError);
-        // Não falha a venda por causa do erro na cozinha
+            status: 'new',
+            order_number: maxNum + 1,
+          });
+          for (const ki of kitchenOrderItems) {
+            await nocodbCreate('kitchen_order_items', {
+              id: crypto.randomUUID(),
+              kitchen_order_id: kitchenOrder.id,
+              menu_item_id: ki.menu_item_id,
+              menu_item_name: ki.menu_item_name,
+              quantity: ki.quantity,
+            });
+          }
+        } catch (kitchenError) {
+          console.error('Erro ao criar pedido da cozinha:', kitchenError);
+        }
       }
 
       return sale;
@@ -159,15 +127,9 @@ export const useCreateSale = () => {
 
 export const useDeleteSale = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('sales')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await nocodbDelete('sales', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });

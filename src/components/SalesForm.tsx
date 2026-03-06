@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
@@ -9,7 +9,6 @@ import { CartItem, SaleRecord } from '../types/inventory';
 import { MenuItemWithCategory } from '../types/database';
 import { useMenuItems } from '../hooks/useMenuItems';
 import { useCreateSale } from '../hooks/useSales';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 const SalesForm: React.FC = () => {
@@ -21,67 +20,6 @@ const SalesForm: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Configurar realtime updates para sincronização em tempo real
-  useEffect(() => {
-    const channel = supabase
-      .channel('menu-updates')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'menu_items'
-      }, (payload) => {
-        console.log('Stock updated in real-time:', payload);
-        
-        // Invalidar cache do React Query para buscar dados atualizados
-        refetch();
-        
-        // Verificar se algum item no carrinho foi afetado
-        const updatedItemId = payload.new?.id;
-        const newStock = payload.new?.stock || 0;
-        
-        if (updatedItemId) {
-          setCartItems(prevCartItems => {
-            const affectedItem = prevCartItems.find(item => item.menuItem.id === updatedItemId);
-            
-            if (affectedItem) {
-              // Se o item está no carrinho e o estoque foi reduzido
-              if (newStock < affectedItem.quantity) {
-                // Mostrar notificação sobre mudança de estoque
-                toast({
-                  title: "Estoque atualizado",
-                  description: `O estoque de ${affectedItem.menuItem.name} foi reduzido. Verifique seu carrinho.`,
-                  variant: "default"
-                });
-                
-                // Se não há mais estoque, remover do carrinho
-                if (newStock === 0) {
-                  return prevCartItems.filter(item => item.menuItem.id !== updatedItemId);
-                }
-                
-                // Se há estoque mas menos que a quantidade no carrinho, ajustar
-                return prevCartItems.map(item => 
-                  item.menuItem.id === updatedItemId 
-                    ? {
-                        ...item,
-                        quantity: Math.min(item.quantity, newStock),
-                        subtotal: item.menuItem.price * Math.min(item.quantity, newStock)
-                      }
-                    : item
-                );
-              }
-            }
-            
-            return prevCartItems;
-          });
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refetch, toast]);
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)));
@@ -231,10 +169,10 @@ const SalesForm: React.FC = () => {
         variant: "default"
       });
 
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Erro ao processar venda",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: "destructive"
       });
     }
