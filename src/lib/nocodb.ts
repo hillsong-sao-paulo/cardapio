@@ -33,6 +33,18 @@ function headers(): HeadersInit {
   return h;
 }
 
+/** Absolute when VITE_NOCODB_URL is set; same-origin path for the local demo. */
+function requestUrl(path: string, params?: Record<string, string | undefined>): string {
+  const url = new URL(path, BASE_URL || 'http://127.0.0.1');
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value) url.searchParams.set(key, value);
+    }
+  }
+  if (!BASE_URL) return `${url.pathname}${url.search}`;
+  return url.toString();
+}
+
 /** Resposta da API de listagem NocoDB v2 */
 interface ListResponse<T = Record<string, unknown>> {
   list?: T[];
@@ -54,14 +66,15 @@ export async function nocodbList<T = Record<string, unknown>>(
   options?: { where?: string; sort?: string; limit?: number; offset?: number; fields?: string }
 ): Promise<T[]> {
   const tableId = getTableId(tableName);
-  const url = new URL(`${BASE_URL}/api/v2/tables/${tableId}/records`);
-  if (options?.where) url.searchParams.set('where', options.where);
-  if (options?.sort) url.searchParams.set('sort', options.sort);
-  if (options?.limit != null) url.searchParams.set('limit', String(options.limit));
-  if (options?.offset != null) url.searchParams.set('offset', String(options.offset));
-  if (options?.fields) url.searchParams.set('fields', options.fields);
+  const url = requestUrl(`/api/v2/tables/${tableId}/records`, {
+    where: options?.where,
+    sort: options?.sort,
+    limit: options?.limit != null ? String(options.limit) : undefined,
+    offset: options?.offset != null ? String(options.offset) : undefined,
+    fields: options?.fields,
+  });
 
-  const res = await fetch(url.toString(), { headers: headers() });
+  const res = await fetch(url, { headers: headers() });
   if (!res.ok) throw new Error(`NocoDB ${tableName} list: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as ListResponse<T>;
   return getList(data);
@@ -84,7 +97,7 @@ export async function nocodbCreate<T = Record<string, unknown>>(
   payload: Record<string, unknown>
 ): Promise<T> {
   const tableId = getTableId(tableName);
-  const res = await fetch(`${BASE_URL}/api/v2/tables/${tableId}/records`, {
+  const res = await fetch(requestUrl(`/api/v2/tables/${tableId}/records`), {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify(payload),
@@ -106,7 +119,7 @@ export async function nocodbUpdate<T = Record<string, unknown>>(
   payload: Record<string, unknown>
 ): Promise<T> {
   const tableId = getTableId(tableName);
-  const res = await fetch(`${BASE_URL}/api/v2/tables/${tableId}/records/${encodeURIComponent(recordId)}`, {
+  const res = await fetch(requestUrl(`/api/v2/tables/${tableId}/records/${encodeURIComponent(recordId)}`), {
     method: 'PATCH',
     headers: headers(),
     body: JSON.stringify(payload),
@@ -121,7 +134,7 @@ export async function nocodbUpdate<T = Record<string, unknown>>(
  */
 export async function nocodbDelete(tableName: string, recordId: string): Promise<void> {
   const tableId = getTableId(tableName);
-  const res = await fetch(`${BASE_URL}/api/v2/tables/${tableId}/records/${encodeURIComponent(recordId)}`, {
+  const res = await fetch(requestUrl(`/api/v2/tables/${tableId}/records/${encodeURIComponent(recordId)}`), {
     method: 'DELETE',
     headers: headers(),
   });

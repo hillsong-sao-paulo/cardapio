@@ -76,6 +76,11 @@ const Auth: React.FC = () => {
               <CardDescription className="text-center">
                 Digite suas credenciais para acessar o sistema
               </CardDescription>
+              {import.meta.env.DEV && (
+                <p className="text-center text-xs text-gray-500">
+                  Demonstração local: admin@hillsong.com / demo1234
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleSubmit}>
