@@ -64,7 +64,7 @@ const Auth: React.FC = () => {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <div className="mx-auto h-20 w-20 rounded-full overflow-hidden mb-4">
-              <img src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Hillsong Logo" className="h-full w-full object-cover" />
+              <img src="/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Hillsong Logo" className="h-full w-full object-cover" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900">Painel Administrativo</h2>
             <p className="mt-2 text-sm text-gray-600">Hillsong Lounge</p>

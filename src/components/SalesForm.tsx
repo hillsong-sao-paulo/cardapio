@@ -201,7 +201,7 @@ const SalesForm: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
               <img 
-                src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
+                src="/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png" 
                 alt="Hillsong Logo" 
                 className="w-full h-full object-cover"
               />
@@ -257,7 +257,7 @@ const SalesForm: React.FC = () => {
         <div className="max-w-md mx-auto px-4">
           <div className="flex items-center justify-center">
             <img 
-              src="/lovable-uploads/397f96e7-0d6d-4eb1-a7f9-2d0c8fff89fd.png" 
+              src="/brand/397f96e7-0d6d-4eb1-a7f9-2d0c8fff89fd.png" 
               alt="Hillsong São Paulo" 
               className="h-8 opacity-60"
             />

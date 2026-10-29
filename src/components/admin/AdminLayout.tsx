@@ -80,7 +80,7 @@ const AdminLayout: React.FC = () => {
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden">
-            <img src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Logo" className="w-full h-full object-cover" />
+            <img src="/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h2 className="text-lg font-bold">Admin Panel</h2>
@@ -131,7 +131,7 @@ const AdminLayout: React.FC = () => {
               {/* Logo and Title */}
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <img src="/lovable-uploads/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Logo" className="w-full h-full object-cover" />
+                  <img src="/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold">Painel</h1>
