@@ -14,12 +14,20 @@ export interface MenuItem {
   category: string;
   subItems?: SubItem[];
   image?: string;
+  option_profile?: string | null;
 }
 
 export interface CartItem {
   menuItem: MenuItem;
   quantity: number;
   subtotal: number;
+  lineKey: string;
+  optionsLabel: string | null;
+  selection: {
+    drink: string | null;
+    doneness: string | null;
+    removed: string[];
+  };
 }
 
 export interface SaleRecord {

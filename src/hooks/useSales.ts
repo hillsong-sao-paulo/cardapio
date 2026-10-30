@@ -64,6 +64,10 @@ export const useCreateSale = () => {
         quantity: number;
         unit_price: number;
         subtotal: number;
+        options_label?: string | null;
+        drink?: string | null;
+        doneness?: string | null;
+        removed?: string[];
       }>;
     }) => {
       if (isSupabaseConfigured) {
@@ -74,6 +78,9 @@ export const useCreateSale = () => {
             saleData.items.map((item) => ({
               menu_item_id: item.menu_item_id,
               quantity: item.quantity,
+              ...(item.drink ? { drink: item.drink } : {}),
+              ...(item.doneness ? { doneness: item.doneness } : {}),
+              ...(item.removed && item.removed.length > 0 ? { removed: item.removed } : {}),
             })),
           );
           return { id: created.sale_id, total: created.total } as Sale;
@@ -91,6 +98,7 @@ export const useCreateSale = () => {
         quantity: item.quantity,
         unit_price: item.unit_price,
         subtotal: item.subtotal,
+        options_label: item.options_label ?? null,
       }));
       for (const item of saleItems) {
         await nocodbCreate('sale_items', item);
@@ -136,6 +144,7 @@ export const useCreateSale = () => {
               menu_item_id: item.menu_item_id,
               menu_item_name: menuMap.get(item.menu_item_id)?.name ?? 'Item não encontrado',
               quantity: item.quantity,
+              options_label: item.options_label ?? null,
             });
           }
         } catch (kitchenError) {

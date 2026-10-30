@@ -1,15 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
 import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
 import CategoryTabs from './CategoryTabs';
-import { CartItem, SaleRecord } from '../types/inventory';
+import { CartItem, MenuItem as InventoryMenuItem } from '../types/inventory';
 import { MenuItemWithCategory } from '../types/database';
 import { useMenuItems } from '../hooks/useMenuItems';
 import { useCreateSale } from '../hooks/useSales';
-import { useNavigate } from 'react-router-dom';
+import {
+  ItemSelection,
+  cartLineKey,
+  formatOptions,
+  optionProfileFor,
+  saleOptionFields,
+} from '@/lib/item-options';
 
 const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   const { data: menuItems = [], isLoading, isError, refetch } = useMenuItems();
@@ -19,7 +24,6 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)));
@@ -33,10 +37,25 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
     return menuItems.filter(item => item.category?.name === activeCategory);
   }, [menuItems, activeCategory]);
 
-  const addToCart = (item: MenuItemWithCategory) => {
-    // Buscar o item mais atualizado da lista para verificar estoque atual
+  const toInventoryItem = (item: MenuItemWithCategory, stock: number): InventoryMenuItem => ({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    stock,
+    category: item.category?.name || '',
+    description: item.description || '',
+    subItems: [],
+    option_profile: item.option_profile,
+  });
+
+  const quantityInCart = (itemId: string, exceptLineKey?: string) =>
+    cartItems
+      .filter((cartItem) => cartItem.menuItem.id === itemId && cartItem.lineKey !== exceptLineKey)
+      .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
+  const addToCart = (item: MenuItemWithCategory, selection: ItemSelection) => {
     const currentItem = menuItems.find(menuItem => menuItem.id === item.id);
-    
+
     if (!currentItem || currentItem.stock <= 0) {
       toast({
         title: "Estoque insuficiente",
@@ -46,56 +65,67 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
       return;
     }
 
-    const existingItem = cartItems.find(cartItem => cartItem.menuItem.id === item.id);
-    if (existingItem) {
-      if (existingItem.quantity >= currentItem.stock) {
-        toast({
-          title: "Estoque insuficiente",
-          description: `Apenas ${currentItem.stock} unidades disponíveis de ${item.name}.`,
-          variant: "destructive"
-        });
-        return;
-      }
-      updateQuantity(item.id, existingItem.quantity + 1);
-    } else {
-      const newCartItem: CartItem = {
-        menuItem: {
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          stock: currentItem.stock,
-          category: item.category?.name || '',
-          description: item.description || '',
-          subItems: []
-        },
-        quantity: 1,
-        subtotal: item.price
-      };
-      setCartItems([...cartItems, newCartItem]);
+    const profile = optionProfileFor(currentItem);
+    const optionsLabel = profile ? formatOptions(profile, selection) : null;
+    if (profile && !optionsLabel) return;
+
+    const lineKey = cartLineKey(item.id, optionsLabel);
+    if (quantityInCart(item.id) >= currentItem.stock) {
+      toast({
+        title: "Estoque insuficiente",
+        description: `Apenas ${currentItem.stock} unidades disponíveis de ${item.name}.`,
+        variant: "destructive"
+      });
+      return;
     }
+
+    const existingItem = cartItems.find(cartItem => cartItem.lineKey === lineKey);
+    if (existingItem) {
+      updateQuantity(lineKey, existingItem.quantity + 1);
+      return;
+    }
+
+    const newCartItem: CartItem = {
+      menuItem: toInventoryItem(item, currentItem.stock),
+      quantity: 1,
+      subtotal: item.price,
+      lineKey,
+      optionsLabel,
+      selection: {
+        drink: selection.drink,
+        doneness: selection.doneness,
+        removed: [...selection.removed],
+      },
+    };
+    setCartItems([...cartItems, newCartItem]);
   };
 
-  const updateQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setCartItems(cartItems.filter(item => item.menuItem.id !== itemId));
-    } else {
-      // Verificar estoque atual antes de atualizar
-      const currentMenuItem = menuItems.find(item => item.id === itemId);
-      if (currentMenuItem && newQuantity > currentMenuItem.stock) {
-        toast({
-          title: "Estoque insuficiente",
-          description: `Apenas ${currentMenuItem.stock} unidades disponíveis.`,
-          variant: "destructive"
-        });
-        return;
-      }
+  const updateQuantity = (lineKey: string, newQuantity: number) => {
+    const currentLine = cartItems.find(item => item.lineKey === lineKey);
+    if (!currentLine) return;
 
-      setCartItems(cartItems.map(item => item.menuItem.id === itemId ? {
-        ...item,
-        quantity: newQuantity,
-        subtotal: item.menuItem.price * newQuantity
-      } : item));
+    if (newQuantity <= 0) {
+      setCartItems(cartItems.filter(item => item.lineKey !== lineKey));
+      return;
     }
+
+    const currentMenuItem = menuItems.find(item => item.id === currentLine.menuItem.id);
+    const usedByOthers = quantityInCart(currentLine.menuItem.id, lineKey);
+    if (!currentMenuItem || usedByOthers + newQuantity > currentMenuItem.stock) {
+      toast({
+        title: "Estoque insuficiente",
+        description: `Apenas ${currentMenuItem?.stock ?? 0} unidades disponíveis de ${currentLine.menuItem.name}.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCartItems(cartItems.map(item => item.lineKey === lineKey ? {
+      ...item,
+      quantity: newQuantity,
+      subtotal: item.menuItem.price * newQuantity,
+      menuItem: { ...item.menuItem, stock: currentMenuItem.stock },
+    } : item));
   };
 
   const processSale = async () => {
@@ -111,12 +141,21 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
     // Verificação final de estoque antes de processar a venda
     const stockErrors: string[] = [];
     
+    const requestedByItem = new Map<string, { name: string; quantity: number }>();
     for (const cartItem of cartItems) {
-      const currentMenuItem = menuItems.find(item => item.id === cartItem.menuItem.id);
+      const current = requestedByItem.get(cartItem.menuItem.id);
+      requestedByItem.set(cartItem.menuItem.id, {
+        name: cartItem.menuItem.name,
+        quantity: (current?.quantity ?? 0) + cartItem.quantity,
+      });
+    }
+
+    for (const [itemId, requested] of requestedByItem) {
+      const currentMenuItem = menuItems.find(item => item.id === itemId);
       if (!currentMenuItem) {
-        stockErrors.push(`${cartItem.menuItem.name} não encontrado.`);
-      } else if (currentMenuItem.stock < cartItem.quantity) {
-        stockErrors.push(`${cartItem.menuItem.name}: apenas ${currentMenuItem.stock} disponível, mas ${cartItem.quantity} solicitado.`);
+        stockErrors.push(`${requested.name} não encontrado.`);
+      } else if (currentMenuItem.stock < requested.quantity) {
+        stockErrors.push(`${requested.name}: apenas ${currentMenuItem.stock} disponível, mas ${requested.quantity} solicitado.`);
       }
     }
 
@@ -128,19 +167,21 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
       });
       
       // Atualizar carrinho com estoque atual disponível
-      setCartItems(prevItems => 
-        prevItems.map(cartItem => {
+      setCartItems(prevItems => {
+        const used = new Map<string, number>();
+        return prevItems.map(cartItem => {
           const currentMenuItem = menuItems.find(item => item.id === cartItem.menuItem.id);
-          if (currentMenuItem && currentMenuItem.stock < cartItem.quantity) {
-            return {
-              ...cartItem,
-              quantity: Math.max(0, currentMenuItem.stock),
-              subtotal: cartItem.menuItem.price * Math.max(0, currentMenuItem.stock)
-            };
-          }
-          return cartItem;
-        }).filter(item => item.quantity > 0)
-      );
+          const already = used.get(cartItem.menuItem.id) ?? 0;
+          const allowed = Math.max(0, (currentMenuItem?.stock ?? 0) - already);
+          const quantity = Math.min(cartItem.quantity, allowed);
+          used.set(cartItem.menuItem.id, already + quantity);
+          return {
+            ...cartItem,
+            quantity,
+            subtotal: cartItem.menuItem.price * quantity,
+          };
+        }).filter(item => item.quantity > 0);
+      });
       
       return;
     }
@@ -152,7 +193,9 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
           menu_item_id: item.menuItem.id,
           quantity: item.quantity,
           unit_price: item.menuItem.price,
-          subtotal: item.subtotal
+          subtotal: item.subtotal,
+          options_label: item.optionsLabel,
+          ...saleOptionFields(optionProfileFor(item.menuItem), item.selection),
         }))
       };
 
@@ -178,9 +221,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
     }
   };
 
-  const getCartItem = (itemId: string) => {
-    return cartItems.find(item => item.menuItem.id === itemId);
-  };
+  const linesFor = (itemId: string) => cartItems.filter(item => item.menuItem.id === itemId);
 
   if (isError) {
     return (
@@ -235,17 +276,9 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
           {filteredMenuItems.map(item => (
             <MenuCard 
               key={item.id} 
-              item={{
-                id: item.id,
-                name: item.name,
-                description: item.description || '',
-                price: item.price,
-                stock: item.stock,
-                category: item.category?.name || '',
-                subItems: []
-              }}
-              cartItem={getCartItem(item.id)} 
-              onAddToCart={() => addToCart(item)} 
+              item={toInventoryItem(item, item.stock)}
+              lines={linesFor(item.id)}
+              onAdd={(selection) => addToCart(item, selection)}
               onUpdateQuantity={updateQuantity} 
             />
           ))}

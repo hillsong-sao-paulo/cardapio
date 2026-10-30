@@ -115,15 +115,22 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         <>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {cartItems.map((cartItem) => (
-              <div key={cartItem.menuItem.id} className="bg-gray-50 rounded-xl p-4">
+              <div key={cartItem.lineKey} className="bg-gray-50 rounded-xl p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-sm text-gray-900 flex-1 pr-2 font-sf">
-                    {cartItem.menuItem.name}
-                  </h4>
+                  <div className="flex-1 pr-2">
+                    <h4 className="font-semibold text-sm text-gray-900 font-sf">
+                      {cartItem.menuItem.name}
+                    </h4>
+                    {cartItem.optionsLabel ? (
+                      <p className="mt-1 text-xs text-gray-500 whitespace-pre-line font-sf">
+                        {cartItem.optionsLabel}
+                      </p>
+                    ) : null}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onUpdateQuantity(cartItem.menuItem.id, 0)}
+                    onClick={() => onUpdateQuantity(cartItem.lineKey, 0)}
                     className="text-gray-400 hover:text-app-blue h-6 w-6 p-0 rounded-full"
                   >
                     <Trash2 className="w-4 h-4" />

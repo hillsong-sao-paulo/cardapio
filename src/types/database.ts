@@ -15,6 +15,7 @@ export interface MenuItem {
   stock: number;
   category_id: string | null;
   image_url: string | null;
+  option_profile?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +33,7 @@ export interface SaleItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  options_label?: string | null;
   created_at: string;
 }
 
@@ -51,6 +53,7 @@ export interface KitchenOrderItem {
   menu_item_id: string | null;
   menu_item_name: string;
   quantity: number;
+  options_label?: string | null;
   created_at: string;
   menu_item?: MenuItem;
 }

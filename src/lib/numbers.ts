@@ -11,6 +11,13 @@ const PORTUGUESE_ERRORS: Array<[string, string]> = [
   ['Not enough stock', 'Estoque insuficiente'],
   ['Order not found', 'Pedido não encontrado'],
   ['Invalid login credentials', 'Credenciais inválidas'],
+  ['Choose the drink', 'Escolha o sabor'],
+  ['Choose how the burger should be cooked', 'Escolha o ponto'],
+  ['This item has no options', 'Este item não tem opções'],
+  ['Unknown item option', 'Opção inválida'],
+  ['Duplicate removed item', 'Item removido repetido'],
+  ['Removed items must be a list', 'As retiradas precisam ser uma lista'],
+  ['Duplicate menu item in the same sale', 'Essa combinação já está no pedido'],
 ];
 
 export function toUserError(error: unknown, fallback: string): Error {
