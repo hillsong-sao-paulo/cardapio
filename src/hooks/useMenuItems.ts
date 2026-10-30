@@ -107,7 +107,12 @@ export const useDeleteMenuItem = () => {
     mutationFn: async (id: string) => {
       if (isSupabaseConfigured) {
         const { error } = await getSupabase().from('menu_items').delete().eq('id', id);
-        if (error) throw new Error(error.message);
+        if (error) {
+          const detail = `${error.message} ${error.details ?? ''} ${error.code ?? ''}`;
+          const blockedBySale = error.code === '23503' && detail.includes('sale_items');
+          if (blockedBySale) throw new Error('ITEM_HAS_SALES');
+          throw new Error(error.message);
+        }
         return;
       }
       await nocodbDelete('menu_items', id);

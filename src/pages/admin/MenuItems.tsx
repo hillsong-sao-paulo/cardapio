@@ -95,9 +95,12 @@ const MenuItems: React.FC = () => {
         description: "O item foi excluído com sucesso.",
       });
     } catch (error) {
+      const sold = error instanceof Error && error.message === 'ITEM_HAS_SALES';
       toast({
-        title: "Erro ao excluir item",
-        description: "Ocorreu um erro ao excluir o item.",
+        title: sold ? 'Este item já foi vendido' : 'Erro ao excluir item',
+        description: sold
+          ? 'O histórico precisa continuar apontando para ele. Se a venda foi um teste, exclua ela na aba Vendas e tente de novo.'
+          : 'Ocorreu um erro ao excluir o item.',
         variant: "destructive"
       });
     }
