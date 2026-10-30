@@ -16,6 +16,7 @@ const Kitchen: React.FC = () => {
     refetch
   } = useKitchenOrders();
   const storeName = useStoreName();
+  const pageTitle = storeName ? `${storeName} · Cozinha` : 'Cozinha';
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -45,6 +46,10 @@ const Kitchen: React.FC = () => {
     setLastOrderCount(newOrdersCount);
   }, [orders, lastOrderCount, soundEnabled]);
 
+  useEffect(() => {
+    document.title = pageTitle;
+  }, [pageTitle]);
+
   const newOrdersCount = orders.filter(order => order.status === 'new').length;
   const readyOrdersCount = orders.filter(order => order.status === 'ready').length;
   const totalOrders = orders.length;
@@ -67,8 +72,6 @@ const Kitchen: React.FC = () => {
       </div>
     );
   }
-
-  const pageTitle = storeName ? `${storeName} · Cozinha` : 'Cozinha';
 
   return (
     <div className="min-h-screen bg-gray-50">

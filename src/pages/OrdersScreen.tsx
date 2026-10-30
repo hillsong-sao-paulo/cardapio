@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import OrdersDisplay from '@/components/orders-screen/OrdersDisplay';
 import { useStoreName } from '@/hooks/useStoreName';
@@ -7,6 +7,10 @@ import { useStoreName } from '@/hooks/useStoreName';
 const OrdersScreen: React.FC = () => {
   const storeName = useStoreName();
   const title = storeName ? `${storeName} · Pedidos` : 'Painel de Pedidos';
+
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
 
   return (
     <>

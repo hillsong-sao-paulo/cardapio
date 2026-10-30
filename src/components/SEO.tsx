@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 interface SEOProps {
@@ -13,6 +13,10 @@ interface SEOProps {
 const SEO: React.FC<SEOProps> = ({ title, description, noindex = false, ogImage, plain = false }) => {
   const fullTitle = plain ? title : `${title} | Admin - Hillsong Lounge`;
   const canonicalUrl = `${window.location.origin}${window.location.pathname}`;
+
+  useEffect(() => {
+    document.title = fullTitle;
+  }, [fullTitle]);
   const defaultOgImage = '/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png';
 
   return (
