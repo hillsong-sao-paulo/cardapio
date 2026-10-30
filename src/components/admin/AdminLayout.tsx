@@ -11,11 +11,14 @@ import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import ProtectedRoute from './ProtectedRoute';
 import { AdminStoreProvider, useAdminStore } from '@/context/admin-store';
-import { StoreManager } from '@/components/admin/StoreManager';
+import { StoreControls, StoreManager } from '@/components/admin/StoreManager';
+import { copyPlainText } from '@/lib/copy-text';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 const AdminLayoutView: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [storesOpen, setStoresOpen] = useState(false);
+  const [mobileLinksOpen, setMobileLinksOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -44,8 +47,21 @@ const AdminLayoutView: React.FC = () => {
       `${origin}/s/${store.slug}/kitchen`,
       `${origin}/s/${store.slug}/orders`,
     ].join('\n');
-    await navigator.clipboard.writeText(links);
+    const copied = await copyPlainText(links);
+    if (!copied) {
+      setMobileLinksOpen(true);
+      toast({
+        title: 'Não foi possível copiar',
+        description: 'Os links estão abertos logo abaixo. Segure um deles para copiar.',
+        variant: 'destructive',
+      });
+      return;
+    }
     toast({ title: 'Links da loja copiados' });
+  };
+  const openStoreManager = () => {
+    setSidebarOpen(false);
+    setStoresOpen(true);
   };
   const handleLogout = async () => {
     const {
@@ -99,7 +115,7 @@ const AdminLayoutView: React.FC = () => {
     if (!user?.name) return 'AD';
     return user.name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
   };
-  const SidebarContent = () => <div className="flex flex-col h-full">
+  const SidebarContent = () => <div className="flex h-full flex-col overflow-y-auto">
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden">
@@ -125,6 +141,17 @@ const AdminLayoutView: React.FC = () => {
       </nav>
 
       <div className="p-4 border-t space-y-2">
+        {isSupabaseConfigured && (
+          <div className="pb-2">
+            <StoreControls
+              selectId="admin-store-menu"
+              linksOpen={mobileLinksOpen}
+              onToggleLinks={() => setMobileLinksOpen((current) => !current)}
+              onOpenStores={openStoreManager}
+              stacked
+            />
+          </div>
+        )}
         <Button variant="ghost" className="w-full justify-start gap-3" onClick={() => {
         navigate('/admin/profile');
         setSidebarOpen(false);
@@ -150,15 +177,15 @@ const AdminLayoutView: React.FC = () => {
         {/* Top Header Level */}
         <header className="bg-white border-b shadow-sm">
           <div className="w-full max-w-[1280px] mx-auto">
-            <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center justify-between px-4 py-4 md:px-6">
               {/* Logo and Title */}
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full overflow-hidden">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="w-8 h-8 shrink-0 rounded-full overflow-hidden">
                   <img src="/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png" alt="Logo" className="w-full h-full object-cover" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold">Painel</h1>
-                  <p className="text-sm text-gray-500">{profile?.name || user?.name || 'Hillsong Lounge'}</p>
+                <div className="min-w-0">
+                  <h1 className="truncate text-xl font-bold">Painel</h1>
+                  <p className="truncate text-sm text-gray-500">{profile?.name || user?.name || 'Hillsong Lounge'}</p>
                 </div>
               </div>
 
@@ -183,7 +210,9 @@ const AdminLayoutView: React.FC = () => {
                     <Button variant="outline" size="sm" onClick={copyStoreLinks} disabled={!store}>
                       Copiar links
                     </Button>
-                    <StoreManager />
+                    <Button variant="outline" size="sm" onClick={() => setStoresOpen(true)}>
+                      Lojas
+                    </Button>
                   </div>
                 )}
                 <Button variant="outline" className="gap-2" onClick={openMenu}>
@@ -227,20 +256,35 @@ const AdminLayoutView: React.FC = () => {
               {/* Mobile Menu Button */}
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
+                  <Button variant="ghost" size="icon" className="md:hidden" aria-label="Abrir menu">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-64">
+                <SheetContent side="left" className="w-[min(20rem,calc(100vw-2rem))] p-0">
                   <SidebarContent />
                 </SheetContent>
               </Sheet>
             </div>
+
+            {isSupabaseConfigured && (
+              <StoreManager hideButton open={storesOpen} onOpenChange={setStoresOpen} />
+            )}
+
+            {isSupabaseConfigured && (
+              <div className="border-t px-4 py-3 md:hidden">
+                <StoreControls
+                  selectId="admin-store-mobile"
+                  linksOpen={mobileLinksOpen}
+                  onToggleLinks={() => setMobileLinksOpen((current) => !current)}
+                  onOpenStores={() => setStoresOpen(true)}
+                />
+              </div>
+            )}
           </div>
         </header>
 
         {/* Second Level Navigation - Hide on profile page */}
-        {!location.pathname.includes('/profile') && <div className="bg-white border-b">
+        {!location.pathname.includes('/profile') && <div className="hidden border-b bg-white md:block">
             <div className="w-full max-w-[1280px] mx-auto">
               <div className="px-6 py-2">
                 <div className="hidden md:flex">
