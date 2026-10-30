@@ -10,7 +10,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import ProtectedRoute from './ProtectedRoute';
-const AdminLayout: React.FC = () => {
+import { AdminStoreProvider, useAdminStore } from '@/context/admin-store';
+import { isSupabaseConfigured } from '@/lib/supabase';
+
+const AdminLayoutView: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +27,25 @@ const AdminLayout: React.FC = () => {
   const {
     toast
   } = useToast();
+  const { store, stores, storeId, setStoreId, loading: storesLoading } = useAdminStore();
+  const openMenu = () => {
+    if (isSupabaseConfigured && store?.slug) {
+      navigate(`/s/${store.slug}`);
+      return;
+    }
+    navigate('/');
+  };
+  const copyStoreLinks = async () => {
+    if (!store) return;
+    const origin = window.location.origin;
+    const links = [
+      `${origin}/s/${store.slug}`,
+      `${origin}/s/${store.slug}/kitchen`,
+      `${origin}/s/${store.slug}/orders`,
+    ].join('\n');
+    await navigator.clipboard.writeText(links);
+    toast({ title: 'Links da loja copiados' });
+  };
   const handleLogout = async () => {
     const {
       error
@@ -110,7 +132,7 @@ const AdminLayout: React.FC = () => {
           Perfil
         </Button>
         <Button variant="ghost" className="w-full justify-start gap-3" onClick={() => {
-        navigate('/');
+        openMenu();
         setSidebarOpen(false);
       }}>
           <Home className="h-4 w-4" />
@@ -141,7 +163,26 @@ const AdminLayout: React.FC = () => {
 
               {/* User Menu - Hidden on mobile */}
               <div className="hidden md:flex items-center gap-3">
-                <Button variant="outline" className="gap-2" onClick={() => navigate('/')}>
+                {isSupabaseConfigured && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-500" htmlFor="admin-store">Loja</label>
+                    <select
+                      id="admin-store"
+                      className="border rounded-md px-2 py-1 text-sm bg-white"
+                      value={storeId ?? ''}
+                      disabled={storesLoading || stores.length === 0}
+                      onChange={(event) => setStoreId(event.target.value)}
+                    >
+                      {stores.map((item) => (
+                        <option key={item.id} value={item.id}>{item.name}</option>
+                      ))}
+                    </select>
+                    <Button variant="outline" size="sm" onClick={copyStoreLinks} disabled={!store}>
+                      Copiar links
+                    </Button>
+                  </div>
+                )}
+                <Button variant="outline" className="gap-2" onClick={openMenu}>
                   <Home className="h-4 w-4" />
                   Ver Cardápio
                 </Button>
@@ -221,4 +262,13 @@ const AdminLayout: React.FC = () => {
       </div>
     </ProtectedRoute>;
 };
+
+const AdminLayout: React.FC = () => (
+  <ProtectedRoute>
+    <AdminStoreProvider>
+      <AdminLayoutView />
+    </AdminStoreProvider>
+  </ProtectedRoute>
+);
+
 export default AdminLayout;

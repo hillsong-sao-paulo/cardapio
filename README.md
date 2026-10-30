@@ -13,7 +13,16 @@ npm run dev
 
 Open the URL Vite prints. The dev server listens on `http://127.0.0.1:8080`.
 
-In development, a local demo database starts with the server. The terminal prints the admin login for that demo.
+To use the hosted canteen, copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Those values are public. Do not put a service role key in the frontend.
+
+With Supabase configured, each store has its own links:
+
+- `/s/store-slug` menu and counter
+- `/s/store-slug/kitchen` kitchen
+- `/s/store-slug/orders` public order screen
+- `/auth` admin login, limited to that admin's campus
+
+Leave the Supabase values empty to use the local demo database. The terminal prints the admin login for that demo.
 
 ## Stack
 

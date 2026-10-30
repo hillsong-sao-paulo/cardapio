@@ -11,8 +11,8 @@ import { useMenuItems } from '../hooks/useMenuItems';
 import { useCreateSale } from '../hooks/useSales';
 import { useNavigate } from 'react-router-dom';
 
-const SalesForm: React.FC = () => {
-  const { data: menuItems = [], isLoading, refetch } = useMenuItems();
+const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
+  const { data: menuItems = [], isLoading, isError, refetch } = useMenuItems();
   const createSale = useCreateSale();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -182,6 +182,14 @@ const SalesForm: React.FC = () => {
     return cartItems.find(item => item.menuItem.id === itemId);
   };
 
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+        <p className="text-gray-700">Loja não encontrada.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -207,8 +215,8 @@ const SalesForm: React.FC = () => {
               />
             </div>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900 font-sf">Ponto de Vendas</h1>
-              <p className="text-sm text-gray-500 font-sf">Cardápio do Lounge</p>
+              <h1 className="text-xl font-bold text-gray-900 font-sf">{storeName || 'Ponto de Vendas'}</h1>
+              <p className="text-sm text-gray-500 font-sf">Cardápio</p>
             </div>
           </div>
         </div>

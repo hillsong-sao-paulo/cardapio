@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { apiUrl } from '@/lib/api';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface ProfileData {
   id: string;
@@ -25,7 +26,16 @@ export const useProfile = () => {
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
+      if (!user?.id) throw new Error('User is not signed in');
+      if (isSupabaseConfigured) {
+        const { data, error } = await getSupabase()
+          .from('profiles')
+          .select('id, name, email, created_at')
+          .eq('id', user.id)
+          .single();
+        if (error) throw new Error(error.message);
+        return data as ProfileData;
+      }
       const res = await fetch(apiUrl(`/api/auth/profile?userId=${encodeURIComponent(user.id)}`));
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -48,7 +58,17 @@ export const useUpdateProfile = () => {
 
   return useMutation({
     mutationFn: async (params: UpdateProfileParams) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
+      if (!user?.id) throw new Error('User is not signed in');
+      if (isSupabaseConfigured) {
+        const { data, error } = await getSupabase()
+          .from('profiles')
+          .update({ name: params.name, email: params.email })
+          .eq('id', user.id)
+          .select('id, name, email, created_at')
+          .single();
+        if (error) throw new Error(error.message);
+        return data as ProfileData;
+      }
       const res = await fetch(apiUrl('/api/auth/profile'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -72,7 +92,18 @@ export const useChangePassword = () => {
 
   return useMutation({
     mutationFn: async (params: ChangePasswordParams) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
+      if (!user?.id || !user.email) throw new Error('User is not signed in');
+      if (isSupabaseConfigured) {
+        const supabase = getSupabase();
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: params.currentPassword,
+        });
+        if (reauthError) throw new Error('Senha atual incorreta');
+        const { error } = await supabase.auth.updateUser({ password: params.newPassword });
+        if (error) throw new Error(error.message);
+        return { ok: true };
+      }
       const res = await fetch(apiUrl('/api/auth/change-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

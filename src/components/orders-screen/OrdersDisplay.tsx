@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
+import { useStoreName } from '@/hooks/useStoreName';
 
 const OrdersDisplay: React.FC = () => {
-  const { data: orders = [], isLoading } = useKitchenOrders();
+  const { data: orders = [], isLoading, isError } = useKitchenOrders();
+  const storeName = useStoreName();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update time every minute
@@ -53,8 +55,9 @@ const OrdersDisplay: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <div className="text-center md:text-left">
             <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
-              Painel de Pedidos
+              {storeName || 'Painel de Pedidos'}
             </h1>
+            {isError && <p className="text-sm text-red-600 mt-1">Loja não encontrada.</p>}
             <p className="text-sm md:text-lg text-gray-600 mt-1">
               {formatDate(currentTime)}
             </p>

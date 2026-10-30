@@ -6,8 +6,10 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 const Index = lazy(() => import('./pages/Index'));
+const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth'));
 const Kitchen = lazy(() => import('./pages/Kitchen'));
 const OrdersScreen = lazy(() => import('./pages/OrdersScreen'));
@@ -31,7 +33,10 @@ const App = () => (
         <BrowserRouter>
           <Suspense fallback={<div>Carregando...</div>}>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={isSupabaseConfigured ? <Home /> : <Index />} />
+              <Route path="/s/:slug" element={<Index />} />
+              <Route path="/s/:slug/kitchen" element={<Kitchen />} />
+              <Route path="/s/:slug/orders" element={<OrdersScreen />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/kitchen" element={<Kitchen />} />
               <Route path="/orders-screen" element={<OrdersScreen />} />

@@ -2,16 +2,20 @@
 import React from 'react';
 import SalesForm from '@/components/SalesForm';
 import SEO from '@/components/SEO';
+import { useStoreName } from '@/hooks/useStoreName';
 
 const Index: React.FC = () => {
+  const storeName = useStoreName();
+  const title = storeName || 'Cantina';
+
   return (
     <>
-      <SEO 
-        title="Cardápio Digital Outback - Encounterfest 2025"
-        description="Sistema de vendas do cardápio digital do Outback para o Encounterfest 2025 no Lounge do Office da igreja Hillsong. Faça seu pedido online com praticidade."
+      <SEO
+        plain
+        title={title}
+        description={`Cardápio de ${title}. Faça seu pedido no balcão.`}
       />
-      
-      <SalesForm />
+      <SalesForm storeName={storeName} />
     </>
   );
 };

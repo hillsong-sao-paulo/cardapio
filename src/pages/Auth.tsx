@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Lock, User } from 'lucide-react';
 import SEO from '@/components/SEO';
 import { useAuth } from '@/hooks/useAuth';
+import { isSupabaseConfigured } from '@/lib/supabase';
 const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,7 +77,7 @@ const Auth: React.FC = () => {
               <CardDescription className="text-center">
                 Digite suas credenciais para acessar o sistema
               </CardDescription>
-              {import.meta.env.DEV && (
+              {import.meta.env.DEV && !isSupabaseConfigured && (
                 <p className="text-center text-xs text-gray-500">
                   Demonstração local: admin@hillsong.com / demo1234
                 </p>

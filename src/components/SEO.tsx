@@ -7,11 +7,12 @@ interface SEOProps {
   description: string;
   noindex?: boolean;
   ogImage?: string;
+  plain?: boolean;
 }
 
-const SEO: React.FC<SEOProps> = ({ title, description, noindex = false, ogImage }) => {
-  const fullTitle = `${title} | Admin - Hillsong Lounge`;
-  const canonicalUrl = `https://encounterfest2025.hillsong.com${window.location.pathname}`;
+const SEO: React.FC<SEOProps> = ({ title, description, noindex = false, ogImage, plain = false }) => {
+  const fullTitle = plain ? title : `${title} | Admin - Hillsong Lounge`;
+  const canonicalUrl = `${window.location.origin}${window.location.pathname}`;
   const defaultOgImage = '/brand/d8797de3-f66c-4df1-be7a-6f33464353d3.png';
 
   return (

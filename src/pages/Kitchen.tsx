@@ -1,6 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
+import { useStoreName } from '@/hooks/useStoreName';
 import KanbanBoard from '@/components/kitchen/KanbanBoard';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Volume2, VolumeX } from 'lucide-react';
@@ -10,8 +12,10 @@ const Kitchen: React.FC = () => {
   const {
     data: orders = [],
     isLoading,
+    isError,
     refetch
   } = useKitchenOrders();
+  const storeName = useStoreName();
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -45,6 +49,14 @@ const Kitchen: React.FC = () => {
   const readyOrdersCount = orders.filter(order => order.status === 'ready').length;
   const totalOrders = orders.length;
 
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+        <p className="text-gray-700">Loja não encontrada.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -56,8 +68,13 @@ const Kitchen: React.FC = () => {
     );
   }
 
+  const pageTitle = storeName ? `${storeName} · Cozinha` : 'Cozinha';
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>{pageTitle}</title>
+      </Helmet>
       {/* Container principal com full-width */}
       <div className="w-full">
         {/* Header da cozinha */}
@@ -70,6 +87,7 @@ const Kitchen: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Cozinha</h1>
+                  {storeName && <p className="text-sm text-gray-500">{storeName}</p>}
                 </div>
               </div>
               
