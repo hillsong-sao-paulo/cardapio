@@ -17,6 +17,12 @@ import { DateRange } from 'react-day-picker';
 import { useToast } from '@/hooks/use-toast';
 import { SaleWithItems } from '@/types/database';
 
+function csvCell(value: string | number): string {
+  const text = String(value ?? '');
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
 const Sales: React.FC = () => {
   const { data: sales = [] } = useSales();
   const deleteSaleMutation = useDeleteSale();
@@ -94,7 +100,16 @@ const Sales: React.FC = () => {
 
   // Exportar vendas detalhadas em CSV (incluindo itens)
   const exportDetailedCSV = () => {
-    const detailedData: any[] = [];
+    const detailedData: Array<{
+      sale_id: string;
+      sale_date: string;
+      sale_total: number;
+      item_name: string;
+      item_options: string;
+      item_quantity: number;
+      item_unit_price: number;
+      item_subtotal: number;
+    }> = [];
     
     filteredSales.forEach(sale => {
       sale.sale_items?.forEach(item => {
@@ -103,6 +118,7 @@ const Sales: React.FC = () => {
           sale_date: new Date(sale.created_at).toLocaleString('pt-BR'),
           sale_total: sale.total,
           item_name: item.menu_item.name,
+          item_options: item.options_label ?? '',
           item_quantity: item.quantity,
           item_unit_price: item.unit_price,
           item_subtotal: item.subtotal
@@ -111,17 +127,18 @@ const Sales: React.FC = () => {
     });
 
     const csvContent = [
-      ['ID da Venda', 'Data da Venda', 'Total da Venda', 'Item', 'Quantidade', 'Preço Unitário', 'Subtotal'],
+      ['ID da Venda', 'Data da Venda', 'Total da Venda', 'Item', 'Opções', 'Quantidade', 'Preço Unitário', 'Subtotal'],
       ...detailedData.map(row => [
         row.sale_id,
         row.sale_date,
         `R$ ${row.sale_total.toFixed(2)}`,
         row.item_name,
+        row.item_options,
         row.item_quantity,
         `R$ ${row.item_unit_price.toFixed(2)}`,
         `R$ ${row.item_subtotal.toFixed(2)}`
       ])
-    ].map(row => row.join(',')).join('\n');
+    ].map(row => row.map(csvCell).join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -412,6 +429,9 @@ const Sales: React.FC = () => {
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-1 sm:space-y-0">
                           <div className="flex-1">
                             <p className="font-medium text-sm">{item.menu_item.name}</p>
+                            {item.options_label ? (
+                              <p className="text-xs text-gray-500 whitespace-pre-line">{item.options_label}</p>
+                            ) : null}
                             <p className="text-xs text-gray-600">
                               {item.quantity}x R$ {item.unit_price.toFixed(2)}
                             </p>

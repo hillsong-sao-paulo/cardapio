@@ -95,7 +95,12 @@ export const useCreateKitchenOrder = () => {
     mutationFn: async (orderData: {
       sale_id: string;
       total_items: number;
-      items: Array<{ menu_item_id: string; menu_item_name: string; quantity: number }>;
+      items: Array<{
+        menu_item_id: string;
+        menu_item_name: string;
+        quantity: number;
+        options_label?: string | null;
+      }>;
     }) => {
       if (isSupabaseConfigured) {
         throw new Error('Kitchen orders are created with the sale');
@@ -119,6 +124,7 @@ export const useCreateKitchenOrder = () => {
           menu_item_id: item.menu_item_id,
           menu_item_name: item.menu_item_name,
           quantity: item.quantity,
+          options_label: item.options_label ?? null,
         });
       }
       return kitchenOrder;

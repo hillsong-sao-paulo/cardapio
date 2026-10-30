@@ -59,6 +59,7 @@ interface MenuSeed {
   price: number;
   stock: number;
   categoryId: string;
+  optionProfile?: 'drink' | 'burger' | 'combo';
 }
 
 const MENU: MenuSeed[] = [
@@ -103,6 +104,24 @@ const MENU: MenuSeed[] = [
     categoryId: 'cat-pratos',
   },
   {
+    id: 'item-burger',
+    name: 'Burguer',
+    description: 'Hambúrguer com ponto da carne e retiradas',
+    price: 22,
+    stock: 12,
+    categoryId: 'cat-pratos',
+    optionProfile: 'burger',
+  },
+  {
+    id: 'item-combo-burger',
+    name: 'Combo Burguer + Batata + Refri',
+    description: 'Burguer, batata e refrigerante',
+    price: 35,
+    stock: 10,
+    categoryId: 'cat-pratos',
+    optionProfile: 'combo',
+  },
+  {
     id: 'item-brownie',
     name: 'MINI BROWNIE',
     description: 'Brownie de chocolate com nozes',
@@ -117,6 +136,7 @@ const MENU: MenuSeed[] = [
     price: 8,
     stock: 50,
     categoryId: 'cat-bebidas',
+    optionProfile: 'drink',
   },
   {
     id: 'item-tea',
@@ -237,6 +257,7 @@ function seedDatabase(): DemoDatabase {
       stock: item.stock,
       category_id: item.categoryId,
       image_url: null,
+      option_profile: item.optionProfile ?? null,
       created_at: now,
       updated_at: now,
     })),

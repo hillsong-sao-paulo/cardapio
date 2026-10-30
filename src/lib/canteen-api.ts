@@ -23,6 +23,7 @@ interface PublicMenuRow {
   stock: number | string;
   category_id: string | null;
   image_url: string | null;
+  option_profile?: string | null;
 }
 
 interface PublicMenuPayload {
@@ -62,6 +63,7 @@ function toMenuItem(row: PublicMenuRow & { created_at?: string; updated_at?: str
     stock: asNumber(row.stock),
     category_id: row.category_id,
     image_url: row.image_url,
+    option_profile: row.option_profile ?? null,
     created_at: row.created_at ?? '',
     updated_at: row.updated_at ?? '',
   };
@@ -117,6 +119,7 @@ interface SaleItemEmbed {
   quantity: number | string;
   unit_price: number | string;
   subtotal: number | string;
+  options_label?: string | null;
   created_at: string;
   menu_items: MenuItem | MenuItem[] | null;
 }
@@ -147,6 +150,7 @@ export async function fetchAdminSales(storeId: string): Promise<SaleWithItems[]>
         quantity,
         unit_price,
         subtotal,
+        options_label,
         created_at,
         menu_items (
           id,
@@ -180,6 +184,7 @@ export async function fetchAdminSales(storeId: string): Promise<SaleWithItems[]>
           quantity: asNumber(item.quantity),
           unit_price: asNumber(item.unit_price),
           subtotal: asNumber(item.subtotal),
+          options_label: item.options_label ?? null,
           created_at: item.created_at,
           menu_item: {
             ...menuItem,
@@ -198,6 +203,7 @@ interface KitchenItemEmbed {
   menu_item_id: string | null;
   menu_item_name: string;
   quantity: number | string;
+  options_label?: string | null;
   created_at: string;
 }
 
@@ -219,6 +225,7 @@ function toKitchenItem(item: KitchenItemEmbed, fallbackOrderId: string): Kitchen
     menu_item_id: item.menu_item_id,
     menu_item_name: item.menu_item_name,
     quantity: asNumber(item.quantity),
+    options_label: item.options_label ?? null,
     created_at: item.created_at,
   };
 }
@@ -240,6 +247,7 @@ export async function fetchAdminKitchenOrders(storeId: string): Promise<KitchenO
         menu_item_id,
         menu_item_name,
         quantity,
+        options_label,
         created_at
       )
     `)
@@ -272,6 +280,7 @@ interface PublicKitchenPayload {
       menu_item_id: string | null;
       menu_item_name: string;
       quantity: number;
+      options_label?: string | null;
     }>;
   }>;
 }
@@ -293,6 +302,7 @@ export async function fetchPublicKitchenOrders(slug: string): Promise<KitchenOrd
       menu_item_id: item.menu_item_id,
       menu_item_name: item.menu_item_name,
       quantity: asNumber(item.quantity),
+      options_label: item.options_label ?? null,
       created_at: order.created_at,
     })),
   }));
@@ -300,7 +310,13 @@ export async function fetchPublicKitchenOrders(slug: string): Promise<KitchenOrd
 
 export async function createPublicSale(
   slug: string,
-  lines: Array<{ menu_item_id: string; quantity: number }>,
+  lines: Array<{
+    menu_item_id: string;
+    quantity: number;
+    drink?: string | null;
+    doneness?: string | null;
+    removed?: string[];
+  }>,
 ): Promise<{ sale_id: string; order_number: number; total: number }> {
   const { data, error } = await getSupabase().rpc('create_sale', {
     store_slug: slug,

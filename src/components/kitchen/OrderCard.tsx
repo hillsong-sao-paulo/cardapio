@@ -11,6 +11,28 @@ interface OrderCardProps {
   order: KitchenOrderWithItems;
 }
 
+function KitchenItemRow({
+  item,
+  badgeClass,
+}: {
+  item: KitchenOrderWithItems['kitchen_order_items'][number];
+  badgeClass: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-2 rounded bg-gray-50 p-1.5 text-xs">
+      <div className="min-w-0 flex-1">
+        <p className="font-medium text-gray-900">{item.menu_item_name}</p>
+        {item.options_label ? (
+          <p className="mt-0.5 whitespace-pre-line text-gray-600">{item.options_label}</p>
+        ) : null}
+      </div>
+      <div className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-bold ${badgeClass}`}>
+        {item.quantity}x
+      </div>
+    </div>
+  );
+}
+
 const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   const updateStatus = useUpdateKitchenOrderStatus();
   const { toast } = useToast();
@@ -95,14 +117,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
           {/* Lista de Itens */}
           <div className="space-y-1 mb-2">
             {order.kitchen_order_items.map((item) => (
-              <div key={item.id} className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs">
-                <span className="font-medium text-gray-900 truncate flex-1 mr-2">
-                  {item.menu_item_name}
-                </span>
-                <div className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold text-xs">
-                  {item.quantity}x
-                </div>
-              </div>
+              <KitchenItemRow key={item.id} item={item} badgeClass="bg-red-100 text-red-700" />
             ))}
           </div>
 
@@ -154,14 +169,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
         {/* Lista de Itens */}
         <div className="space-y-1">
           {order.kitchen_order_items.map((item) => (
-            <div key={item.id} className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs">
-              <span className="font-medium text-gray-900 truncate flex-1 mr-2">
-                {item.menu_item_name}
-              </span>
-              <div className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold text-xs">
-                {item.quantity}x
-              </div>
-            </div>
+            <KitchenItemRow key={item.id} item={item} badgeClass="bg-green-100 text-green-700" />
           ))}
         </div>
       </div>
