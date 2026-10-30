@@ -9,7 +9,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 const Index = lazy(() => import('./pages/Index'));
-const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth'));
 const Kitchen = lazy(() => import('./pages/Kitchen'));
 const OrdersScreen = lazy(() => import('./pages/OrdersScreen'));
@@ -33,7 +32,7 @@ const App = () => (
         <BrowserRouter>
           <Suspense fallback={<div>Carregando...</div>}>
             <Routes>
-              <Route path="/" element={isSupabaseConfigured ? <Home /> : <Index />} />
+              <Route path="/" element={isSupabaseConfigured ? <Navigate to="/admin" replace /> : <Index />} />
               <Route path="/s/:slug" element={<Index />} />
               <Route path="/s/:slug/kitchen" element={<Kitchen />} />
               <Route path="/s/:slug/orders" element={<OrdersScreen />} />
