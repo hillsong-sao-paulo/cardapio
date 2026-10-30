@@ -11,6 +11,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import ProtectedRoute from './ProtectedRoute';
 import { AdminStoreProvider, useAdminStore } from '@/context/admin-store';
+import { StoreManager } from '@/components/admin/StoreManager';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 const AdminLayoutView: React.FC = () => {
@@ -174,12 +175,15 @@ const AdminLayoutView: React.FC = () => {
                       onChange={(event) => setStoreId(event.target.value)}
                     >
                       {stores.map((item) => (
-                        <option key={item.id} value={item.id}>{item.name}</option>
+                        <option key={item.id} value={item.id}>
+                          {item.is_active ? item.name : `${item.name} (inativa)`}
+                        </option>
                       ))}
                     </select>
                     <Button variant="outline" size="sm" onClick={copyStoreLinks} disabled={!store}>
                       Copiar links
                     </Button>
+                    <StoreManager />
                   </div>
                 )}
                 <Button variant="outline" className="gap-2" onClick={openMenu}>
