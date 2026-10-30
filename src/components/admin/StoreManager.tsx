@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,12 +36,13 @@ function emptyDraft(campusId: string): StoreDraft {
   };
 }
 
-function storeLinks(slug: string): string[] {
+function storeLinks(slug: string): { label: string; url: string }[] {
   const origin = window.location.origin;
+  const base = `${origin}/s/${slug}`;
   return [
-    `${origin}/s/${slug}`,
-    `${origin}/s/${slug}/kitchen`,
-    `${origin}/s/${slug}/orders`,
+    { label: 'Cardápio', url: base },
+    { label: 'Cozinha', url: `${base}/kitchen` },
+    { label: 'Pedidos', url: `${base}/orders` },
   ];
 }
 
@@ -57,6 +59,7 @@ export function StoreManager() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<StoreDraft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [expandedStoreId, setExpandedStoreId] = useState<string | null>(null);
 
   const campusesQuery = useQuery({
     queryKey: ['admin-campuses'],
@@ -100,9 +103,13 @@ export function StoreManager() {
     });
   };
 
-  const copyLinks = async (slug: string) => {
-    await navigator.clipboard.writeText(storeLinks(slug).join('\n'));
-    toast({ title: 'Links da loja copiados' });
+  const copyText = async (text: string, title: string) => {
+    await navigator.clipboard.writeText(text);
+    toast({ title });
+  };
+
+  const copyLinks = (slug: string) => {
+    copyText(storeLinks(slug).map((link) => link.url).join('\n'), 'Links da loja copiados');
   };
 
   const save = async () => {
@@ -243,7 +250,7 @@ export function StoreManager() {
               {isValidStoreSlug(draft.slug) && (
                 <div className="space-y-1 text-xs text-gray-600">
                   {storeLinks(draft.slug).map((link) => (
-                    <p key={link} className="truncate">{link}</p>
+                    <p key={link.url} className="truncate">{link.url}</p>
                   ))}
                 </div>
               )}
@@ -260,24 +267,54 @@ export function StoreManager() {
           )}
 
           <div className="space-y-2">
-            {stores.map((store) => (
-              <div key={store.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{store.name}</p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {`/s/${store.slug}${store.is_active ? '' : ' · inativa'}`}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button variant="outline" size="sm" onClick={() => copyLinks(store.slug)}>
-                    Copiar links
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => startEdit(store)}>
-                    Editar
-                  </Button>
-                </div>
-              </div>
-            ))}
+            {stores.map((store) => {
+              const linksOpen = expandedStoreId === store.id;
+              return (
+                <Collapsible
+                  key={store.id}
+                  open={linksOpen}
+                  onOpenChange={(nextOpen) => setExpandedStoreId(nextOpen ? store.id : null)}
+                  className="rounded-md border"
+                >
+                  <div className="flex items-center justify-between gap-3 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{store.name}</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {`/s/${store.slug}${store.is_active ? '' : ' · inativa'}`}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          {linksOpen ? 'Ocultar links' : 'Ver links'}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <Button variant="outline" size="sm" onClick={() => copyLinks(store.slug)}>
+                        Copiar links
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => startEdit(store)}>
+                        Editar
+                      </Button>
+                    </div>
+                  </div>
+                  <CollapsibleContent className="space-y-2 border-t px-3 py-3">
+                    {storeLinks(store.slug).map((link) => (
+                      <div key={link.url} className="flex items-center gap-2">
+                        <span className="w-16 shrink-0 text-xs font-medium">{link.label}</span>
+                        <span className="min-w-0 flex-1 truncate text-xs text-gray-500">{link.url}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyText(link.url, `${link.label} copiado`)}
+                        >
+                          Copiar
+                        </Button>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
             {stores.length === 0 && (
               <p className="text-sm text-gray-500">Nenhuma loja neste campus ainda.</p>
             )}
