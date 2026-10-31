@@ -22,6 +22,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
 
@@ -138,6 +139,16 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
       return;
     }
 
+    const name = customerName.trim().replace(/\s+/g, ' ');
+    if (!name) {
+      toast({
+        title: "Informe o nome",
+        description: "O nome aparece na cozinha junto com o número do pedido.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Verificação final de estoque antes de processar a venda
     const stockErrors: string[] = [];
     
@@ -189,6 +200,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
     try {
       const saleData = {
         total: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
+        customer_name: name,
         items: cartItems.map(item => ({
           menu_item_id: item.menuItem.id,
           quantity: item.quantity,
@@ -203,6 +215,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
 
       // Limpar carrinho e mostrar sucesso
       setCartItems([]);
+      setCustomerName('');
       setIsCartOpen(false);
       setShowSuccessScreen(true);
 
@@ -286,7 +299,9 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
       </div>
 
       <CartSidebar 
-        cartItems={cartItems} 
+        cartItems={cartItems}
+        customerName={customerName}
+        onCustomerNameChange={setCustomerName}
         onUpdateQuantity={updateQuantity} 
         onProcessSale={processSale} 
         isOpen={isCartOpen} 

@@ -18,6 +18,8 @@ const PORTUGUESE_ERRORS: Array<[string, string]> = [
   ['Duplicate removed item', 'Item removido repetido'],
   ['Removed items must be a list', 'As retiradas precisam ser uma lista'],
   ['Duplicate menu item in the same sale', 'Essa combinação já está no pedido'],
+  ['Customer name is required', 'Informe o nome'],
+  ['Customer name is too long', 'O nome pode ter no máximo 60 caracteres'],
 ];
 
 export function toUserError(error: unknown, fallback: string): Error {

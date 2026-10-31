@@ -59,6 +59,7 @@ export const useCreateSale = () => {
   return useMutation({
     mutationFn: async (saleData: {
       total: number;
+      customer_name: string;
       items: Array<{
         menu_item_id: string;
         quantity: number;
@@ -70,6 +71,10 @@ export const useCreateSale = () => {
         removed?: string[];
       }>;
     }) => {
+      const customerName = saleData.customer_name.trim().replace(/\s+/g, ' ');
+      if (!customerName) throw toUserError(new Error('Customer name is required'), 'Could not create the sale');
+      if (customerName.length > 60) throw toUserError(new Error('Customer name is too long'), 'Could not create the sale');
+
       if (isSupabaseConfigured) {
         if (!slug) throw new Error('Store not found');
         try {
@@ -82,6 +87,7 @@ export const useCreateSale = () => {
               ...(item.doneness ? { doneness: item.doneness } : {}),
               ...(item.removed && item.removed.length > 0 ? { removed: item.removed } : {}),
             })),
+            customerName,
           );
           return { id: created.sale_id, total: created.total } as Sale;
         } catch (error) {
@@ -136,6 +142,7 @@ export const useCreateSale = () => {
             total_items: totalItems,
             status: 'new',
             order_number: maxNum + 1,
+            customer_name: customerName,
           });
           for (const item of saleData.items) {
             await nocodbCreate('kitchen_order_items', {
