@@ -16,6 +16,14 @@ export const emptySelection = (): ItemSelection => ({
   removed: [],
 });
 
+export function quickSelection(item: { name: string; option_profile?: string | null }): ItemSelection {
+  const profile = optionProfileFor(item);
+  if (profile === 'drink') return { drink: DRINKS[0], doneness: null, removed: [] };
+  if (profile === 'burger') return { drink: null, doneness: 'Ao ponto', removed: [] };
+  if (profile === 'combo') return { drink: DRINKS[0], doneness: 'Ao ponto', removed: [] };
+  return emptySelection();
+}
+
 export function optionProfileFor(item: { name: string; option_profile?: string | null }): OptionProfile | null {
   if (item.option_profile === 'drink' || item.option_profile === 'burger' || item.option_profile === 'combo') {
     return item.option_profile;

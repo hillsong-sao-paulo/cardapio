@@ -12,8 +12,8 @@ import {
   REMOVALS,
   ItemSelection,
   cartLineKey,
-  emptySelection,
   formatOptions,
+  quickSelection,
   missingOptionHint,
   optionProfileFor,
   optionsReady,
@@ -28,7 +28,7 @@ interface MenuCardProps {
 }
 
 const MenuCard: React.FC<MenuCardProps> = ({ item, lines, onAdd, onUpdateQuantity }) => {
-  const [selection, setSelection] = useState<ItemSelection>(emptySelection);
+  const [selection, setSelection] = useState<ItemSelection>(() => quickSelection(item));
   const profile = optionProfileFor(item);
   const ready = optionsReady(profile, selection);
   const optionsLabel = profile && ready ? formatOptions(profile, selection) : null;
