@@ -37,6 +37,13 @@ export interface SaleItem {
   created_at: string;
 }
 
+export interface OrderReceipt {
+  order_number: number;
+  customer_name: string | null;
+  total: number;
+  created_at: string;
+}
+
 export interface KitchenOrder {
   id: string;
   sale_id: string | null;
