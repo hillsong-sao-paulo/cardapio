@@ -5,6 +5,7 @@ import type {
   KitchenOrderItem,
   KitchenOrderWithItems,
   MenuItem,
+  OrderReceipt,
   MenuItemWithCategory,
   SaleWithItems,
 } from '@/types/database';
@@ -311,6 +312,35 @@ export async function fetchPublicKitchenOrders(slug: string): Promise<KitchenOrd
       created_at: order.created_at,
     })),
   }));
+}
+
+export async function fetchRecentReceipts(slug: string): Promise<OrderReceipt[]> {
+  const { data, error } = await getSupabase().rpc('list_recent_receipts', { store_slug: slug });
+  const payload = requireData(
+    data as {
+      receipts?: Array<{
+        order_number: number | string;
+        customer_name?: string | null;
+        total: number | string;
+        created_at: string;
+      }>;
+    } | null,
+    error,
+    'Store not found',
+  );
+  return (payload.receipts ?? []).map((receipt) => ({
+    order_number: asNumber(receipt.order_number),
+    customer_name: receipt.customer_name?.trim() || null,
+    total: asNumber(receipt.total),
+    created_at: receipt.created_at,
+  }));
+}
+
+export async function fetchNextOrderNumber(slug: string): Promise<number | null> {
+  const { data, error } = await getSupabase().rpc('next_order_number', { store_slug: slug });
+  if (error) throw new Error(error.message);
+  if (data == null) return null;
+  return asNumber(data);
 }
 
 export async function createPublicSale(

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { nocodbCreate, nocodbHasTable, nocodbList, nocodbUpdate } from '@/lib/nocodb';
-import { fetchAdminKitchenOrders, fetchPublicKitchenOrders, updatePublicKitchenOrder } from '@/lib/canteen-api';
+import { fetchAdminKitchenOrders, fetchNextOrderNumber, fetchPublicKitchenOrders, updatePublicKitchenOrder } from '@/lib/canteen-api';
 import { toUserError } from '@/lib/numbers';
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useOptionalAdminStore } from '@/context/admin-store';
@@ -134,3 +134,20 @@ export const useCreateKitchenOrder = () => {
     },
   });
 };
+
+export function useNextOrderNumber(enabled: boolean) {
+  const { slug } = useParams();
+  return useQuery({
+    queryKey: ['next-order-number', slug ?? 'local'],
+    enabled,
+    refetchInterval: enabled ? 5000 : false,
+    queryFn: async () => {
+      if (isSupabaseConfigured) {
+        if (!slug) throw new Error('Store not found');
+        return fetchNextOrderNumber(slug);
+      }
+      const orders = await nocodbList<{ order_number?: number }>('kitchen_orders', { limit: 1000 });
+      return orders.reduce((max, order) => Math.max(max, order.order_number ?? 0), 0) + 1;
+    },
+  });
+}

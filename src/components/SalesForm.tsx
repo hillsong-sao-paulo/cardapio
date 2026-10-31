@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
+import OrderReceipts from './OrderReceipts';
 import CartSidebar from './CartSidebar';
 import SuccessScreen from './SuccessScreen';
 import CategoryTabs from './CategoryTabs';
@@ -8,6 +9,7 @@ import { CartItem, MenuItem as InventoryMenuItem } from '../types/inventory';
 import { MenuItemWithCategory } from '../types/database';
 import { useMenuItems } from '../hooks/useMenuItems';
 import { useCreateSale } from '../hooks/useSales';
+import { useNextOrderNumber } from '../hooks/useKitchenOrders';
 import {
   ItemSelection,
   cartLineKey,
@@ -25,6 +27,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const nextOrderNumber = useNextOrderNumber(isCartOpen && cartItems.length > 0);
   const { toast } = useToast();
 
   const categories = useMemo(() => {
@@ -257,7 +260,9 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 md:flex md:items-start">
+      <OrderReceipts />
+      <div className="min-w-0 flex-1">
       {/* Header fixo com logo */}
       <div className="sticky top-0 z-40 bg-white shadow-sm border-b">
         <div className="px-4 py-4">
@@ -303,6 +308,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
         cartItems={cartItems}
         customerName={customerName}
         onCustomerNameChange={setCustomerName}
+        orderNumber={nextOrderNumber.data ?? null}
         onUpdateQuantity={updateQuantity} 
         onProcessSale={processSale} 
         isOpen={isCartOpen} 
@@ -326,6 +332,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
         isVisible={showSuccessScreen} 
         onClose={() => setShowSuccessScreen(false)} 
       />
+      </div>
     </div>
   );
 };
