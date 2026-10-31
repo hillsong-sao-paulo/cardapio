@@ -15,6 +15,7 @@ import {
   optionProfileFor,
   saleOptionFields,
 } from '@/lib/item-options';
+import { compareMenuDisplay } from '@/lib/menu-order';
 
 const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   const { data: menuItems = [], isLoading, isError, refetch } = useMenuItems();
@@ -32,10 +33,10 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   }, [menuItems]);
 
   const filteredMenuItems = useMemo(() => {
-    if (activeCategory === 'Todos') {
-      return menuItems;
-    }
-    return menuItems.filter(item => item.category?.name === activeCategory);
+    const visible = activeCategory === 'Todos'
+      ? menuItems
+      : menuItems.filter(item => item.category?.name === activeCategory);
+    return [...visible].sort(compareMenuDisplay);
   }, [menuItems, activeCategory]);
 
   const toInventoryItem = (item: MenuItemWithCategory, stock: number): InventoryMenuItem => ({
