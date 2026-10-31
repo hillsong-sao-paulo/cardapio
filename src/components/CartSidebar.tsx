@@ -19,96 +19,88 @@ interface CartSidebarProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const CartSidebar: React.FC<CartSidebarProps> = ({
+function StickyBottomBar({
+  cartItems,
+  totalItems,
+  totalValue,
+  isMinimized,
+  onOpen,
+}: {
+  cartItems: CartItem[];
+  totalItems: number;
+  totalValue: number;
+  isMinimized: boolean;
+  onOpen: () => void;
+}) {
+  if (cartItems.length === 0) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      <div className={`transition-all duration-300 ease-in-out ${
+        isMinimized ? 'scale-90' : 'scale-100'
+      }`}>
+        {isMinimized ? (
+          <div className="relative">
+            <Button
+              onClick={onOpen}
+              className="w-14 h-14 rounded-full bg-app-blue hover:bg-app-blue-hover text-white shadow-lg"
+              size="icon"
+            >
+              <ShoppingCart className="w-6 h-6" />
+            </Button>
+            {totalItems > 0 && (
+              <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
+                {totalItems > 99 ? '99+' : totalItems}
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 shadow-lg rounded-2xl min-w-[280px] max-w-sm">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 font-sf">
+                    {totalItems} {totalItems === 1 ? 'item' : 'itens'}
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 font-sf">
+                    R$ {totalValue.toFixed(2)}
+                  </p>
+                </div>
+
+                <Button
+                  onClick={onOpen}
+                  className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Ver Carrinho
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CartContent({
   cartItems,
   customerName,
   onCustomerNameChange,
+  totalItems,
+  totalValue,
   onUpdateQuantity,
   onProcessSale,
-  isOpen,
-  onOpenChange
-}) => {
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalValue = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-  const isMobile = useIsMobile();
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Minimizar quando rolar para baixo, mostrar totalmente quando rolar para cima
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsMinimized(true);
-      } else if (currentScrollY < lastScrollY) {
-        setIsMinimized(false);
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  const StickyBottomBar = () => {
-    if (cartItems.length === 0) return null;
-
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <div className={`transition-all duration-300 ease-in-out ${
-          isMinimized ? 'scale-90' : 'scale-100'
-        }`}>
-          {isMinimized ? (
-            // Estado minimizado - apenas ícone do carrinho
-            <div className="relative">
-              <Button
-                onClick={() => onOpenChange(true)}
-                className="w-14 h-14 rounded-full bg-app-blue hover:bg-app-blue-hover text-white shadow-lg"
-                size="icon"
-              >
-                <ShoppingCart className="w-6 h-6" />
-              </Button>
-              {/* Badge com quantidade */}
-              {totalItems > 0 && (
-                <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
-                  {totalItems > 99 ? '99+' : totalItems}
-                </Badge>
-              )}
-            </div>
-          ) : (
-            // Estado expandido - informações completas
-            <div className="bg-white border border-gray-200 shadow-lg rounded-2xl min-w-[280px] max-w-sm">
-              <div className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700 font-sf">
-                      {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 font-sf">
-                      R$ {totalValue.toFixed(2)}
-                    </p>
-                  </div>
-                  
-                  <Button
-                    onClick={() => onOpenChange(true)}
-                    className="bg-app-blue hover:bg-app-blue-hover text-white font-sf"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Ver Carrinho
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const CartContent = () => (
+}: {
+  cartItems: CartItem[];
+  customerName: string;
+  onCustomerNameChange: (name: string) => void;
+  totalItems: number;
+  totalValue: number;
+  onUpdateQuantity: (itemId: string, quantity: number) => void;
+  onProcessSale: () => void;
+}) {
+  return (
     <div className="space-y-4">
       {cartItems.length === 0 ? (
         <div className="text-center py-16 text-gray-500">
@@ -141,7 +133,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600 font-sf">
@@ -183,7 +175,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
             </div>
           </div>
 
-          <Button 
+          <Button
             onClick={onProcessSale}
             className="w-full bg-app-blue hover:bg-app-blue-hover text-white py-4 text-lg font-bold rounded-xl transition-all duration-300 font-sf"
           >
@@ -194,11 +186,52 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
       )}
     </div>
   );
+}
+
+const CartSidebar: React.FC<CartSidebarProps> = ({
+  cartItems,
+  customerName,
+  onCustomerNameChange,
+  onUpdateQuantity,
+  onProcessSale,
+  isOpen,
+  onOpenChange
+}) => {
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalValue = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const isMobile = useIsMobile();
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Minimizar quando rolar para baixo, mostrar totalmente quando rolar para cima
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsMinimized(true);
+      } else if (currentScrollY < lastScrollY) {
+        setIsMinimized(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   if (!isMobile) {
     return (
       <>
-        <StickyBottomBar />
+        <StickyBottomBar
+          cartItems={cartItems}
+          totalItems={totalItems}
+          totalValue={totalValue}
+          isMinimized={isMinimized}
+          onOpen={() => onOpenChange(true)}
+        />
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
           <SheetContent className="w-full sm:max-w-lg bg-white border-0">
             <SheetHeader>
@@ -209,7 +242,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
             </SheetHeader>
 
             <div className="mt-6">
-              <CartContent />
+              <CartContent
+                cartItems={cartItems}
+                customerName={customerName}
+                onCustomerNameChange={onCustomerNameChange}
+                totalItems={totalItems}
+                totalValue={totalValue}
+                onUpdateQuantity={onUpdateQuantity}
+                onProcessSale={onProcessSale}
+              />
             </div>
           </SheetContent>
         </Sheet>
@@ -219,7 +260,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   return (
     <>
-      <StickyBottomBar />
+      <StickyBottomBar
+        cartItems={cartItems}
+        totalItems={totalItems}
+        totalValue={totalValue}
+        isMinimized={isMinimized}
+        onOpen={() => onOpenChange(true)}
+      />
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
         <DrawerContent className="bg-white border-0 max-h-[85vh]">
           <DrawerHeader className="pb-4">
@@ -230,7 +277,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           </DrawerHeader>
 
           <div className="px-4 pb-6 overflow-y-auto">
-            <CartContent />
+            <CartContent
+              cartItems={cartItems}
+              customerName={customerName}
+              onCustomerNameChange={onCustomerNameChange}
+              totalItems={totalItems}
+              totalValue={totalValue}
+              onUpdateQuantity={onUpdateQuantity}
+              onProcessSale={onProcessSale}
+            />
           </div>
         </DrawerContent>
       </Drawer>
