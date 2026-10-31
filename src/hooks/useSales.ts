@@ -166,6 +166,8 @@ export const useCreateSale = () => {
       queryClient.invalidateQueries({ queryKey: ['menu_items'] });
       queryClient.invalidateQueries({ queryKey: ['public-menu'] });
       queryClient.invalidateQueries({ queryKey: ['kitchen_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['next-order-number'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-receipts'] });
     },
   });
 };

@@ -13,6 +13,7 @@ interface CartSidebarProps {
   cartItems: CartItem[];
   customerName: string;
   onCustomerNameChange: (name: string) => void;
+  orderNumber: number | null;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onProcessSale: () => void;
   isOpen: boolean;
@@ -90,7 +91,6 @@ function CartContent({
   totalItems,
   totalValue,
   onUpdateQuantity,
-  onProcessSale,
 }: {
   cartItems: CartItem[];
   customerName: string;
@@ -98,7 +98,6 @@ function CartContent({
   totalItems: number;
   totalValue: number;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
-  onProcessSale: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -174,14 +173,6 @@ function CartContent({
               </span>
             </div>
           </div>
-
-          <Button
-            onClick={onProcessSale}
-            className="w-full bg-app-blue hover:bg-app-blue-hover text-white py-4 text-lg font-bold rounded-xl transition-all duration-300 font-sf"
-          >
-            <Receipt className="w-5 h-5 mr-2" />
-            Finalizar Pedido
-          </Button>
         </>
       )}
     </div>
@@ -192,6 +183,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   cartItems,
   customerName,
   onCustomerNameChange,
+  orderNumber,
   onUpdateQuantity,
   onProcessSale,
   isOpen,
@@ -222,6 +214,31 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  const checkoutFooter = cartItems.length === 0 ? null : (
+    <div className="space-y-4">
+      {orderNumber != null ? (
+        <div className="rounded-xl bg-gray-900 px-4 py-3 text-center text-white">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-300 font-sf">Número</p>
+          <p className="text-4xl font-bold tabular-nums font-sf">
+            {String(orderNumber).padStart(3, '0')}
+          </p>
+          {customerName.trim() ? (
+            <p className="mt-1 text-sm text-gray-200 font-sf">
+              {customerName.trim().replace(/\s+/g, ' ')}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      <Button
+        onClick={onProcessSale}
+        className="w-full bg-app-blue hover:bg-app-blue-hover text-white py-4 text-lg font-bold rounded-xl transition-all duration-300 font-sf"
+      >
+        <Receipt className="w-5 h-5 mr-2" />
+        Finalizar Pedido
+      </Button>
+    </div>
+  );
+
   if (!isMobile) {
     return (
       <>
@@ -233,15 +250,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           onOpen={() => onOpenChange(true)}
         />
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-          <SheetContent className="w-full sm:max-w-lg bg-white border-0">
-            <SheetHeader>
+          <SheetContent className="flex h-full w-full flex-col gap-0 overflow-hidden bg-white border-0 sm:max-w-lg">
+            <SheetHeader className="shrink-0">
               <SheetTitle className="flex items-center text-xl font-bold text-gray-900 font-sf">
                 <ShoppingCart className="w-5 h-5 mr-2 text-app-blue" />
                 Seu Pedido
               </SheetTitle>
             </SheetHeader>
 
-            <div className="mt-6">
+            <div className="mt-6 min-h-0 flex-1 overflow-y-auto">
               <CartContent
                 cartItems={cartItems}
                 customerName={customerName}
@@ -249,9 +266,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 totalItems={totalItems}
                 totalValue={totalValue}
                 onUpdateQuantity={onUpdateQuantity}
-                onProcessSale={onProcessSale}
               />
             </div>
+            {checkoutFooter ? (
+              <div className="shrink-0 border-t border-gray-200 pt-4">{checkoutFooter}</div>
+            ) : null}
           </SheetContent>
         </Sheet>
       </>
@@ -268,15 +287,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         onOpen={() => onOpenChange(true)}
       />
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent className="bg-white border-0 max-h-[85vh]">
-          <DrawerHeader className="pb-4">
+        <DrawerContent className="flex max-h-[85vh] flex-col bg-white border-0">
+          <DrawerHeader className="shrink-0 pb-4">
             <DrawerTitle className="flex items-center justify-center text-xl font-bold text-gray-900 font-sf">
               <ShoppingCart className="w-5 h-5 mr-2 text-app-blue" />
               Seu Pedido
             </DrawerTitle>
           </DrawerHeader>
 
-          <div className="px-4 pb-6 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4">
             <CartContent
               cartItems={cartItems}
               customerName={customerName}
@@ -284,9 +303,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
               totalItems={totalItems}
               totalValue={totalValue}
               onUpdateQuantity={onUpdateQuantity}
-              onProcessSale={onProcessSale}
             />
           </div>
+          {checkoutFooter ? (
+            <div className="shrink-0 border-t border-gray-200 px-4 pb-6 pt-4">{checkoutFooter}</div>
+          ) : null}
         </DrawerContent>
       </Drawer>
     </>
