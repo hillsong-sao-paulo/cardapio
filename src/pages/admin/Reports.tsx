@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Clock, BarChart2, Download, TrendingUp, ShoppingCart, DollarSign, ChefHat } from 'lucide-react';
+import { CalendarIcon, Clock, BarChart2, Download, FileText, TrendingUp, ShoppingCart, DollarSign, ChefHat } from 'lucide-react';
+import { downloadCsv, downloadPdf, formatMoney } from '@/lib/report-export';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useSales } from '@/hooks/useSales';
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
@@ -189,73 +190,125 @@ const Reports: React.FC = () => {
     return result.sort((a, b) => b.revenue - a.revenue);
   }, [filteredSales, menuItems, selectedItemsFilter]);
 
+  const itemSalesTotals = useMemo(() => {
+    return salesByItem.reduce(
+      (acc, item) => ({
+        quantity: acc.quantity + item.quantity,
+        sales: acc.sales + item.sales,
+        revenue: acc.revenue + item.revenue,
+      }),
+      { quantity: 0, sales: 0, revenue: 0 },
+    );
+  }, [salesByItem]);
+
+  const reportPeriodLabel = useMemo(() => {
+    const from = dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : 'N/A';
+    const to = dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : 'N/A';
+    const hours = `${hourRange.from.toString().padStart(2, '0')}:00 às ${hourRange.to.toString().padStart(2, '0')}:00`;
+    return `Período: ${from} até ${to} | Horário: ${hours}`;
+  }, [dateRange, hourRange]);
+
+  const reportFilenameSuffix = useMemo(() => {
+    const from = dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje';
+    const to = dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje';
+    return `${from}-${to}`;
+  }, [dateRange]);
+
   const hourOptions = Array.from({ length: 24 }, (_, i) => ({
     value: i,
     label: `${i.toString().padStart(2, '0')}:00`
   }));
 
-  const exportKitchenCSV = () => {
-    const csvContent = [
-      ['Pedido', 'Criado em', 'Pronto em', 'Tempo (minutos)'],
-      ...kitchenStats.ordersWithTime.map(order => [
-        `#${order.orderNumber}`,
-        format(order.createdAt, 'dd/MM/yyyy HH:mm:ss'),
-        format(order.readyAt, 'dd/MM/yyyy HH:mm:ss'),
-        order.timeToReady.toString()
-      ])
-    ].map(row => row.join(',')).join('\n');
+  const kitchenExportRows = () =>
+    kitchenStats.ordersWithTime.map((order) => [
+      `#${order.orderNumber}`,
+      format(order.createdAt, 'dd/MM/yyyy HH:mm:ss'),
+      format(order.readyAt, 'dd/MM/yyyy HH:mm:ss'),
+      order.timeToReady.toString(),
+    ]);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio-cozinha-${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje'}-${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje'}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const itemSalesExportRows = () =>
+    salesByItem.map((item) => [
+      item.name,
+      item.quantity.toString(),
+      item.sales.toString(),
+      formatMoney(item.revenue),
+    ]);
+
+  const itemSalesTotalRow = () => [
+    'Total',
+    itemSalesTotals.quantity.toString(),
+    itemSalesTotals.sales.toString(),
+    formatMoney(itemSalesTotals.revenue),
+  ];
+
+  const hourSalesExportRows = () =>
+    salesByHour.map((data) => [data.hourLabel, formatMoney(data.total)]);
+
+  const hourSalesTotal = useMemo(
+    () => salesByHour.reduce((sum, row) => sum + row.total, 0),
+    [salesByHour],
+  );
+
+  const exportKitchenCSV = () => {
+    downloadCsv(`relatorio-cozinha-${reportFilenameSuffix}.csv`, [
+      ['Pedido', 'Criado em', 'Pronto em', 'Tempo (minutos)'],
+      ...kitchenExportRows(),
+    ]);
+  };
+
+  const exportKitchenPDF = () => {
+    downloadPdf(
+      `relatorio-cozinha-${reportFilenameSuffix}.pdf`,
+      'Relatório da Cozinha',
+      `${reportPeriodLabel}\nTempo médio: ${kitchenStats.averageTime} min | Concluídos: ${kitchenStats.totalCompleted} | Pendentes: ${kitchenStats.totalPending}`,
+      {
+        head: [['Pedido', 'Criado em', 'Pronto em', 'Tempo (min)']],
+        body: kitchenExportRows(),
+      },
+    );
   };
 
   const exportItemSalesCSV = () => {
-    const csvContent = [
+    downloadCsv(`vendas-por-item-${reportFilenameSuffix}.csv`, [
       ['Item', 'Quantidade Vendida', 'Número de Vendas', 'Receita Total'],
-      ...salesByItem.map(item => [
-        item.name,
-        item.quantity.toString(),
-        item.sales.toString(),
-        `R$ ${item.revenue.toFixed(2)}`
-      ])
-    ].map(row => row.join(',')).join('\n');
+      ...itemSalesExportRows(),
+      itemSalesTotalRow(),
+    ]);
+  };
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `vendas-por-item-${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje'}-${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje'}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const exportItemSalesPDF = () => {
+    downloadPdf(
+      `vendas-por-item-${reportFilenameSuffix}.pdf`,
+      'Relatório de Vendas por Item',
+      `${reportPeriodLabel}\nReceita total: ${formatMoney(itemSalesTotals.revenue)} | Itens vendidos: ${itemSalesTotals.quantity}`,
+      {
+        head: [['Item', 'Qtd. vendida', 'Nº de vendas', 'Receita total']],
+        body: itemSalesExportRows(),
+        foot: [itemSalesTotalRow()],
+      },
+    );
   };
 
   const exportHourSalesCSV = () => {
-    const csvContent = [
+    downloadCsv(`vendas-por-hora-${reportFilenameSuffix}.csv`, [
       ['Hora', 'Total de Vendas'],
-      ...salesByHour.map(data => [
-        data.hourLabel,
-        `R$ ${data.total.toFixed(2)}`
-      ])
-    ].map(row => row.join(',')).join('\n');
+      ...hourSalesExportRows(),
+      ['Total', formatMoney(hourSalesTotal)],
+    ]);
+  };
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `vendas-por-hora-${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : 'hoje'}-${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : 'hoje'}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const exportHourSalesPDF = () => {
+    downloadPdf(
+      `vendas-por-hora-${reportFilenameSuffix}.pdf`,
+      'Vendas por Hora',
+      `${reportPeriodLabel}\nTotal no período: ${formatMoney(hourSalesTotal)}`,
+      {
+        head: [['Hora', 'Total de vendas']],
+        body: hourSalesExportRows(),
+        foot: [['Total', formatMoney(hourSalesTotal)]],
+      },
+    );
   };
 
   return (
@@ -425,15 +478,16 @@ const Reports: React.FC = () => {
                   Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportKitchenCSV}
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                CSV
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={exportKitchenCSV} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportKitchenPDF} className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  PDF
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -527,15 +581,16 @@ const Reports: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportItemSalesCSV}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  CSV
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={exportItemSalesCSV} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    CSV
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={exportItemSalesPDF} className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    PDF
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -552,16 +607,26 @@ const Reports: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {salesByItem.length > 0 ? (
-                    salesByItem.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-center">{item.quantity}</TableCell>
-                        <TableCell className="text-center">{item.sales}</TableCell>
-                        <TableCell className="text-right font-medium text-green-600">
-                          R$ {item.revenue.toFixed(2)}
+                    <>
+                      {salesByItem.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-center">{item.sales}</TableCell>
+                          <TableCell className="text-right font-medium text-green-600">
+                            {formatMoney(item.revenue)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted/50 font-semibold">
+                        <TableCell>Total</TableCell>
+                        <TableCell className="text-center">{itemSalesTotals.quantity}</TableCell>
+                        <TableCell className="text-center">{itemSalesTotals.sales}</TableCell>
+                        <TableCell className="text-right text-green-700">
+                          {formatMoney(itemSalesTotals.revenue)}
                         </TableCell>
                       </TableRow>
-                    ))
+                    </>
                   ) : (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
@@ -585,15 +650,16 @@ const Reports: React.FC = () => {
                   Horário: {hourRange.from.toString().padStart(2, '0')}:00 às {hourRange.to.toString().padStart(2, '0')}:00
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportHourSalesCSV}
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                CSV
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={exportHourSalesCSV} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportHourSalesPDF} className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  PDF
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
