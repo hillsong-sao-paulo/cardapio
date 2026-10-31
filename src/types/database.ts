@@ -41,6 +41,7 @@ export interface KitchenOrder {
   id: string;
   sale_id: string | null;
   order_number: number;
+  customer_name?: string | null;
   status: 'new' | 'ready';
   created_at: string;
   ready_at: string | null;

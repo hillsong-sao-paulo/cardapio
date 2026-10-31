@@ -211,6 +211,7 @@ interface KitchenEmbed {
   id: string;
   sale_id: string | null;
   order_number: number;
+  customer_name?: string | null;
   status: 'new' | 'ready';
   created_at: string;
   ready_at: string | null;
@@ -237,6 +238,7 @@ export async function fetchAdminKitchenOrders(storeId: string): Promise<KitchenO
       id,
       sale_id,
       order_number,
+      customer_name,
       status,
       created_at,
       ready_at,
@@ -259,6 +261,7 @@ export async function fetchAdminKitchenOrders(storeId: string): Promise<KitchenO
     id: order.id,
     sale_id: order.sale_id,
     order_number: asNumber(order.order_number),
+    customer_name: order.customer_name ?? null,
     status: order.status,
     created_at: order.created_at,
     ready_at: order.ready_at,
@@ -271,6 +274,7 @@ interface PublicKitchenPayload {
   orders: Array<{
     id: string;
     order_number: number;
+    customer_name?: string | null;
     status: 'new' | 'ready';
     created_at: string;
     ready_at: string | null;
@@ -292,6 +296,7 @@ export async function fetchPublicKitchenOrders(slug: string): Promise<KitchenOrd
     id: order.id,
     sale_id: null,
     order_number: asNumber(order.order_number),
+    customer_name: order.customer_name ?? null,
     status: order.status,
     created_at: order.created_at,
     ready_at: order.ready_at,
@@ -317,10 +322,12 @@ export async function createPublicSale(
     doneness?: string | null;
     removed?: string[];
   }>,
+  customerName: string,
 ): Promise<{ sale_id: string; order_number: number; total: number }> {
   const { data, error } = await getSupabase().rpc('create_sale', {
     store_slug: slug,
     lines,
+    customer_name: customerName,
   });
   const payload = requireData(
     data as { sale_id: string; order_number: number; total: number | string } | null,

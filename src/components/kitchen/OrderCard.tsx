@@ -11,6 +11,27 @@ interface OrderCardProps {
   order: KitchenOrderWithItems;
 }
 
+function OrderIdentity({
+  order,
+  numberClass,
+}: {
+  order: KitchenOrderWithItems;
+  numberClass: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 items-start gap-2">
+      <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-bold text-white ${numberClass}`}>
+        #{order.order_number}
+      </span>
+      {order.customer_name ? (
+        <span className="min-w-0 break-words text-sm font-semibold leading-tight text-gray-900">
+          {order.customer_name}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function KitchenItemRow({
   item,
   badgeClass,
@@ -72,7 +93,9 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
       await updateStatus.mutateAsync({ id: order.id, status: 'ready' });
       toast({
         title: "Pedido pronto!",
-        description: `Pedido #${order.order_number} marcado como pronto.`,
+        description: order.customer_name
+          ? `Pedido #${order.order_number}, ${order.customer_name}, marcado como pronto.`
+          : `Pedido #${order.order_number} marcado como pronto.`,
         variant: "default"
       });
     } catch (error) {
@@ -96,12 +119,10 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
       <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
         {/* Header - Novos Pedidos */}
         <div className="px-2 py-1.5 bg-gradient-to-r from-red-50 to-red-100/50 border-b border-red-100">
-          <div className="flex justify-between items-center mb-1">
-            <div className="w-5 h-5 bg-gradient-to-r from-red-500 to-red-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-xs">#{order.order_number}</span>
-            </div>
+          <div className="flex justify-between items-start gap-2 mb-1">
+            <OrderIdentity order={order} numberClass="bg-red-600" />
             
-            <div className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getTimeColor()}`}>
+            <div className={`inline-flex shrink-0 items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getTimeColor()}`}>
               <Clock className="w-2.5 h-2.5 mr-1" />
               {getElapsedTime()}
             </div>
@@ -149,12 +170,10 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
     <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
       {/* Header - Pedidos Prontos */}
       <div className="px-2 py-1.5 bg-gradient-to-r from-green-50 to-green-100/50 border-b border-green-100">
-        <div className="flex justify-between items-center mb-1">
-          <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-green-600 rounded flex items-center justify-center">
-            <span className="text-white font-bold text-xs">#{order.order_number}</span>
-          </div>
+        <div className="flex justify-between items-start gap-2 mb-1">
+          <OrderIdentity order={order} numberClass="bg-green-600" />
           
-          <div className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-medium">
+          <div className="shrink-0 bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-medium">
             {getDeliveryDuration()}
           </div>
         </div>

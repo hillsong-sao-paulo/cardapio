@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Trash2, Receipt, Plus, Minus, CreditCard } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { CartItem } from '../types/inventory';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CartSidebarProps {
   cartItems: CartItem[];
+  customerName: string;
+  onCustomerNameChange: (name: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onProcessSale: () => void;
   isOpen: boolean;
@@ -18,6 +21,8 @@ interface CartSidebarProps {
 
 const CartSidebar: React.FC<CartSidebarProps> = ({
   cartItems,
+  customerName,
+  onCustomerNameChange,
   onUpdateQuantity,
   onProcessSale,
   isOpen,
@@ -152,6 +157,18 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           </div>
 
           <Separator className="bg-gray-200" />
+
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-gray-800 font-sf">Nome</span>
+            <Input
+              value={customerName}
+              onChange={(event) => onCustomerNameChange(event.target.value.slice(0, 60))}
+              maxLength={60}
+              autoComplete="name"
+              placeholder="Nome de quem retira"
+              className="rounded-xl bg-white font-sf"
+            />
+          </label>
 
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex justify-between items-center mb-2">
