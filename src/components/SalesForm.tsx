@@ -272,7 +272,7 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
 
       {/* Lista de produtos */}
       <div className="px-4 py-4 pb-24">
-        <div className="max-w-md mx-auto">
+        <div className="mx-auto grid w-full max-w-md grid-cols-1 gap-3 md:max-w-5xl md:grid-cols-2 md:items-start">
           {filteredMenuItems.map(item => (
             <MenuCard 
               key={item.id} 

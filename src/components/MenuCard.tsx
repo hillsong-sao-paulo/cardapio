@@ -54,7 +54,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ item, lines, onAdd, onUpdateQuantit
   };
 
   return (
-    <Card className="bg-white border-0 shadow-sm rounded-2xl overflow-hidden mb-3">
+    <Card className="bg-white border-0 shadow-sm rounded-2xl overflow-hidden">
       <CardContent className="p-4">
         <div className="flex flex-col space-y-3">
           <div className="flex items-start justify-between">
