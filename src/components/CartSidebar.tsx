@@ -16,6 +16,7 @@ interface CartSidebarProps {
   orderNumber: number | null;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onProcessSale: () => void;
+  isSubmitting?: boolean;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -186,6 +187,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   orderNumber,
   onUpdateQuantity,
   onProcessSale,
+  isSubmitting = false,
   isOpen,
   onOpenChange
 }) => {
@@ -230,11 +232,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         </div>
       ) : null}
       <Button
+        type="button"
         onClick={onProcessSale}
+        disabled={isSubmitting}
         className="w-full bg-app-blue hover:bg-app-blue-hover text-white py-4 text-lg font-bold rounded-xl transition-all duration-300 font-sf"
       >
         <Receipt className="w-5 h-5 mr-2" />
-        Finalizar Pedido
+        {isSubmitting ? 'Enviando...' : 'Finalizar Pedido'}
       </Button>
     </div>
   );
