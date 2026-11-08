@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import MenuCard from './MenuCard';
 import OrderReceipts from './OrderReceipts';
@@ -22,6 +22,8 @@ import { compareMenuDisplay } from '@/lib/menu-order';
 const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   const { data: menuItems = [], isLoading, isError, refetch } = useMenuItems();
   const createSale = useCreateSale();
+  const submittingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
@@ -134,74 +136,77 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
   };
 
   const processSale = async () => {
-    if (cartItems.length === 0) {
-      toast({
-        title: "Carrinho vazio",
-        description: "Adicione itens ao carrinho antes de processar a venda.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const name = customerName.trim().replace(/\s+/g, ' ');
-    if (!name) {
-      toast({
-        title: "Informe o nome",
-        description: "O nome aparece na cozinha junto com o número do pedido.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Verificação final de estoque antes de processar a venda
-    const stockErrors: string[] = [];
-    
-    const requestedByItem = new Map<string, { name: string; quantity: number }>();
-    for (const cartItem of cartItems) {
-      const current = requestedByItem.get(cartItem.menuItem.id);
-      requestedByItem.set(cartItem.menuItem.id, {
-        name: cartItem.menuItem.name,
-        quantity: (current?.quantity ?? 0) + cartItem.quantity,
-      });
-    }
-
-    for (const [itemId, requested] of requestedByItem) {
-      const currentMenuItem = menuItems.find(item => item.id === itemId);
-      if (!currentMenuItem) {
-        stockErrors.push(`${requested.name} não encontrado.`);
-      } else if (currentMenuItem.stock < requested.quantity) {
-        stockErrors.push(`${requested.name}: apenas ${currentMenuItem.stock} disponível, mas ${requested.quantity} solicitado.`);
-      }
-    }
-
-    if (stockErrors.length > 0) {
-      toast({
-        title: "Erro de estoque",
-        description: stockErrors.join(' '),
-        variant: "destructive"
-      });
-      
-      // Atualizar carrinho com estoque atual disponível
-      setCartItems(prevItems => {
-        const used = new Map<string, number>();
-        return prevItems.map(cartItem => {
-          const currentMenuItem = menuItems.find(item => item.id === cartItem.menuItem.id);
-          const already = used.get(cartItem.menuItem.id) ?? 0;
-          const allowed = Math.max(0, (currentMenuItem?.stock ?? 0) - already);
-          const quantity = Math.min(cartItem.quantity, allowed);
-          used.set(cartItem.menuItem.id, already + quantity);
-          return {
-            ...cartItem,
-            quantity,
-            subtotal: cartItem.menuItem.price * quantity,
-          };
-        }).filter(item => item.quantity > 0);
-      });
-      
-      return;
-    }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
 
     try {
+      if (cartItems.length === 0) {
+        toast({
+          title: "Carrinho vazio",
+          description: "Adicione itens ao carrinho antes de processar a venda.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const name = customerName.trim().replace(/\s+/g, ' ');
+      if (!name) {
+        toast({
+          title: "Informe o nome",
+          description: "O nome aparece na cozinha junto com o número do pedido.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const stockErrors: string[] = [];
+    
+      const requestedByItem = new Map<string, { name: string; quantity: number }>();
+      for (const cartItem of cartItems) {
+        const current = requestedByItem.get(cartItem.menuItem.id);
+        requestedByItem.set(cartItem.menuItem.id, {
+          name: cartItem.menuItem.name,
+          quantity: (current?.quantity ?? 0) + cartItem.quantity,
+        });
+      }
+
+      for (const [itemId, requested] of requestedByItem) {
+        const currentMenuItem = menuItems.find(item => item.id === itemId);
+        if (!currentMenuItem) {
+          stockErrors.push(`${requested.name} não encontrado.`);
+        } else if (currentMenuItem.stock < requested.quantity) {
+          stockErrors.push(`${requested.name}: apenas ${currentMenuItem.stock} disponível, mas ${requested.quantity} solicitado.`);
+        }
+      }
+
+      if (stockErrors.length > 0) {
+        toast({
+          title: "Erro de estoque",
+          description: stockErrors.join(' '),
+          variant: "destructive"
+        });
+      
+        // Atualizar carrinho com estoque atual disponível
+        setCartItems(prevItems => {
+          const used = new Map<string, number>();
+          return prevItems.map(cartItem => {
+            const currentMenuItem = menuItems.find(item => item.id === cartItem.menuItem.id);
+            const already = used.get(cartItem.menuItem.id) ?? 0;
+            const allowed = Math.max(0, (currentMenuItem?.stock ?? 0) - already);
+            const quantity = Math.min(cartItem.quantity, allowed);
+            used.set(cartItem.menuItem.id, already + quantity);
+            return {
+              ...cartItem,
+              quantity,
+              subtotal: cartItem.menuItem.price * quantity,
+            };
+          }).filter(item => item.quantity > 0);
+        });
+      
+        return;
+      }
+
       const saleData = {
         total: cartItems.reduce((sum, item) => sum + item.subtotal, 0),
         customer_name: name,
@@ -235,6 +240,9 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
         description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: "destructive"
       });
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -310,7 +318,8 @@ const SalesForm: React.FC<{ storeName?: string }> = ({ storeName }) => {
         onCustomerNameChange={setCustomerName}
         orderNumber={nextOrderNumber.data ?? null}
         onUpdateQuantity={updateQuantity} 
-        onProcessSale={processSale} 
+        onProcessSale={processSale}
+        isSubmitting={isSubmitting} 
         isOpen={isCartOpen} 
         onOpenChange={setIsCartOpen} 
       />
